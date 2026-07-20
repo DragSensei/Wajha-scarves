@@ -40,3 +40,14 @@ env/
 .env
 .env.local
 .env.*.local
+
+# Database & Caches
+app.db
+.pytest_cache/
+.grimp_cache/
+.import_linter_cache/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+

@@ -6,7 +6,7 @@ import boundaries from 'eslint-plugin-boundaries'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'node_modules']),
+  globalIgnores(['dist', 'node_modules', '.agents']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -58,6 +58,13 @@ export default defineConfig([
               from: { type: 'shared' },
               allow: [
                 { to: { type: 'shared' } }
+              ],
+            },
+            {
+              from: { type: 'feature', captured: { featureName: 'admin' } },
+              allow: [
+                { to: { type: 'shared' } },
+                { to: { type: 'feature' } }
               ],
             },
             {

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout | DIYA Silk Scarves</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#eae7e7",
+                    "on-tertiary-fixed-variant": "#454747",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f6f3f2",
+                    "on-surface-variant": "#4f4634",
+                    "surface-container": "#f0edec",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#fcf9f8",
+                    "tertiary-container": "#969797",
+                    "tertiary-fixed-dim": "#c6c6c7",
+                    "surface": "#fcf9f8",
+                    "inverse-surface": "#313030",
+                    "surface-dim": "#dcd9d9",
+                    "on-background": "#1c1b1b",
+                    "surface-variant": "#e5e2e1",
+                    "inverse-on-surface": "#f3f0ef",
+                    "on-primary-fixed-variant": "#5b4300",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed": "#f7e37c",
+                    "on-tertiary-fixed": "#1a1c1c",
+                    "on-secondary-fixed-variant": "#514700",
+                    "tertiary": "#5d5f5f",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#3e2d00",
+                    "on-tertiary-container": "#2e3030",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#e2e2e2",
+                    "background": "#fcf9f8",
+                    "primary-fixed": "#ffdf9d",
+                    "secondary-fixed-dim": "#dac763",
+                    "on-secondary-fixed": "#211c00",
+                    "primary-fixed-dim": "#f3bf3d",
+                    "surface-container-highest": "#e5e2e1",
+                    "outline": "#817662",
+                    "secondary-container": "#f4e07a",
+                    "outline-variant": "#d2c5ae",
+                    "on-primary-fixed": "#251a00",
+                    "on-error": "#ffffff",
+                    "secondary": "#6c5e00",
+                    "on-surface": "#1c1b1b",
+                    "primary": "#785a00",
+                    "surface-tint": "#785a00",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#716300",
+                    "inverse-primary": "#f3bf3d",
+                    "primary-container": "#bf9001"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "gutter": "24px",
+                    "margin-desktop": "60px",
+                    "unit": "8px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "body-md": ["Plus Jakarta Sans"],
+                    "nav-link": ["Plus Jakarta Sans"],
+                    "label-caps": ["Plus Jakarta Sans"],
+                    "headline-md": ["Playfair Display"],
+                    "display-lg-mobile": ["Playfair Display"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Playfair Display"],
+                    "display-lg": ["Playfair Display"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "nav-link": ["14px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "400"}],
+                    "headline-md": ["32px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-sm": ["24px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .ambient-glow {
+            box-shadow: 0 20px 40px -10px rgba(120, 90, 0, 0.08);
+        }
+        .checkout-input {
+            border: none;
+            border-bottom: 1px solid #1c1b1b;
+            background: transparent;
+            width: 100%;
+            padding: 12px 0;
+            transition: border-color 0.3s ease;
+        }
+        .checkout-input:focus {
+            outline: none;
+            border-color: #785a00;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Header (No Nav as per Destination Rule for Transactional pages) -->
+<header class="w-full bg-surface py-12 px-margin-mobile md:px-margin-desktop border-b border-outline-variant">
+<div class="max-w-container-max mx-auto flex flex-col items-center gap-4">
+<h1 class="font-headline-md text-headline-md tracking-tighter text-on-surface">DIYA</h1>
+<nav class="flex gap-4 items-center text-label-caps font-label-caps uppercase text-on-surface-variant">
+<span>Cart</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-primary font-bold">Information</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span>Shipping</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span>Payment</span>
+</nav>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+<!-- Left Column: Checkout Information -->
+<div class="lg:col-span-7 space-y-20">
+<!-- Contact Section -->
+<section class="space-y-8">
+<div class="flex justify-between items-baseline">
+<h2 class="font-headline-sm text-headline-sm">Contact Information</h2>
+<a class="font-label-caps text-label-caps text-primary uppercase border-b border-primary pb-0.5" href="#">Login</a>
+</div>
+<div class="space-y-6">
+<div class="group">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">Email Address</label>
+<input class="checkout-input" placeholder="example@email.com" type="email"/>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-4 h-4 rounded-none border-outline text-primary focus:ring-primary" id="newsletter" type="checkbox"/>
+<label class="font-body-md text-body-md text-on-surface-variant" for="newsletter">Email me with news and offers</label>
+</div>
+</div>
+</section>
+<!-- Shipping Address Section -->
+<section class="space-y-8">
+<h2 class="font-headline-sm text-headline-sm">Shipping Address</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+<div class="group">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">First Name</label>
+<input class="checkout-input" type="text"/>
+</div>
+<div class="group">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">Last Name</label>
+<input class="checkout-input" type="text"/>
+</div>
+<div class="group md:col-span-2">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">Address</label>
+<input class="checkout-input" placeholder="Street and house number" type="text"/>
+</div>
+<div class="group md:col-span-2">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">Apartment, suite, etc. (optional)</label>
+<input class="checkout-input" type="text"/>
+</div>
+<div class="group">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">City</label>
+<input class="checkout-input" type="text"/>
+</div>
+<div class="group">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">Postal Code</label>
+<input class="checkout-input" type="text"/>
+</div>
+<div class="group md:col-span-2">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant group-focus-within:text-primary transition-colors">Country / Region</label>
+<select class="checkout-input appearance-none bg-transparent rounded-none">
+<option>United Arab Emirates</option>
+<option>Saudi Arabia</option>
+<option>United Kingdom</option>
+<option>United States</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Shipping Method -->
+<section class="space-y-8">
+<h2 class="font-headline-sm text-headline-sm">Shipping Method</h2>
+<div class="border border-outline-variant rounded-lg overflow-hidden">
+<label class="flex items-center justify-between p-6 cursor-pointer bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<input checked="" class="w-4 h-4 border-outline text-primary focus:ring-primary" name="shipping" type="radio"/>
+<div>
+<p class="font-body-md font-semibold">Standard Shipping</p>
+<p class="text-on-surface-variant text-sm">3-5 business days</p>
+</div>
+</div>
+<span class="font-body-md font-semibold">Free</span>
+</label>
+<div class="h-px bg-outline-variant"></div>
+<label class="flex items-center justify-between p-6 cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<input class="w-4 h-4 border-outline text-primary focus:ring-primary" name="shipping" type="radio"/>
+<div>
+<p class="font-body-md font-semibold">Express Delivery</p>
+<p class="text-on-surface-variant text-sm">Next day delivery</p>
+</div>
+</div>
+<span class="font-body-md font-semibold">AED 45.00</span>
+</label>
+</div>
+</section>
+<!-- Navigation Buttons -->
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 pt-10">
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span class="font-label-caps text-label-caps uppercase">Return to cart</span>
+</a>
+<button class="w-full md:w-auto bg-primary-container text-on-primary px-12 py-5 font-label-caps text-label-caps uppercase tracking-[0.1em] hover:opacity-90 transition-opacity active:scale-[0.98] duration-200">
+                        Continue to Shipping
+                    </button>
+</div>
+</div>
+<!-- Right Column: Sticky Order Summary -->
+<aside class="lg:col-span-5 lg:sticky lg:top-8">
+<div class="bg-surface-container-lowest p-8 md:p-12 ambient-glow border border-surface-variant rounded-xl">
+<h2 class="font-headline-sm text-headline-sm mb-10">Order Summary</h2>
+<!-- Line Items -->
+<div class="space-y-8 mb-12">
+<div class="flex gap-6">
+<div class="relative w-24 h-28 bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A top-down aesthetic product shot of a high-end luxury silk scarf with intricate golden and white patterns. The fabric is softly draped to showcase its fluid texture and subtle sheen. The background is a clean, neutral surface that emphasizes the textile's fine weave and sophisticated DIYA brand identity. High-key natural light creates soft shadows, enhancing the depth and material quality of the silk." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCm3ypIjTjO-HQbnzLQsKKyfmeEFVtV0cNu2NO87okn7udAzBGh2jNCnBqwfVgCXGZdh3uH5Yt6MfVgY0CbtLirbrhYIKKN9tj2TtCrJxfSibocz2n3hFx44g3IpKSHSw-E06KuGImag3qlCu8yNYumStoCn5PoGA89L5Z9lMTcuYkNi-PFBZady2J2tXkBlWLgoTgKO49DqFZbCO6vh-VqMjCQXf9eKgMlPu9t17X4D6lqm1ki-X2708tHenJ4ViigXvizi30jqY9v"/>
+<span class="absolute -top-2 -right-2 w-6 h-6 bg-tertiary text-on-tertiary text-[10px] flex items-center justify-center rounded-full">1</span>
+</div>
+<div class="flex flex-col justify-center flex-grow">
+<h3 class="font-headline-sm text-[18px] leading-tight">The Al-Nur Signature Scarf</h3>
+<p class="text-on-surface-variant text-sm mt-1 uppercase tracking-widest">Hand-Rolled Silk / Gold Leaf</p>
+<p class="font-body-md mt-2 font-semibold">AED 1,250.00</p>
+</div>
+</div>
+<div class="flex gap-6">
+<div class="relative w-24 h-28 bg-surface-container flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A macro studio photograph of an ethereal ivory silk scarf with delicate, hand-stitched details. The fabric rests elegantly on a marble surface with warm, diffused morning light catching the shimmering threads. The composition is artistic and minimalist, reflecting a serene and luxurious fashion brand atmosphere. The ivory tones are crisp and clean, embodying the 'Light' aesthetic of the DIYA brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBMdDJMrTFEa7fE6fFHDosy7iwNpS8l39ipU1t2Csh5hihERxkiM0xgA9vBKvPBwzjt6PrYHIqzyK55luoK4atzWAER2iY3aWj8O0MCZXk-bWnKPsXlYA9eJDq-EWT99FF2xqnwokiNRY3NO6U11oCntFEoO-3EEgYHasAtTEmEzjVDrCuGCGUPo4izxUt283bfvygGavNvp5AaPKZ1-TAIouoOZb61XkBeNv6KWf_vnu0HjaQWOOAdp4jGSz3G2C6Wv3ZkIxKKv2I"/>
+<span class="absolute -top-2 -right-2 w-6 h-6 bg-tertiary text-on-tertiary text-[10px] flex items-center justify-center rounded-full">1</span>
+</div>
+<div class="flex flex-col justify-center flex-grow">
+<h3 class="font-headline-sm text-[18px] leading-tight">Ivory Radiance Hijab</h3>
+<p class="text-on-surface-variant text-sm mt-1 uppercase tracking-widest">Premium Crepe Chiffon</p>
+<p class="font-body-md mt-2 font-semibold">AED 450.00</p>
+</div>
+</div>
+</div>
+<!-- Promo Code -->
+<div class="flex gap-4 mb-10 pb-10 border-b border-outline-variant">
+<input class="checkout-input border border-outline-variant rounded-lg px-4 flex-grow focus:border-primary" placeholder="Promo Code" type="text"/>
+<button class="border border-primary text-primary px-6 py-4 font-label-caps text-label-caps uppercase hover:bg-primary-container hover:text-white transition-all">Apply</button>
+</div>
+<!-- Totals -->
+<div class="space-y-4 mb-8">
+<div class="flex justify-between font-body-md text-on-surface-variant">
+<span>Subtotal</span>
+<span>AED 1,700.00</span>
+</div>
+<div class="flex justify-between font-body-md text-on-surface-variant">
+<span>Shipping</span>
+<span class="text-sm uppercase tracking-widest">Calculated at next step</span>
+</div>
+<div class="flex justify-between font-body-md text-on-surface-variant">
+<span>Taxes</span>
+<span>AED 85.00</span>
+</div>
+</div>
+<div class="pt-8 border-t border-on-surface flex justify-between items-baseline">
+<span class="font-headline-sm">Total</span>
+<div class="text-right">
+<span class="text-xs text-on-surface-variant uppercase tracking-widest mr-2">AED</span>
+<span class="font-headline-md text-headline-md leading-none">1,785.00</span>
+</div>
+</div>
+<!-- Trust Badges -->
+<div class="mt-12 flex items-center justify-center gap-8 opacity-60">
+<span class="material-symbols-outlined text-[32px]" title="Secure Payment">verified_user</span>
+<span class="material-symbols-outlined text-[32px]" title="Global Shipping">public</span>
+<span class="material-symbols-outlined text-[32px]" title="Premium Packaging">featured_seasonal_and_gifts</span>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Simple Footer for Checkout -->
+<footer class="w-full mt-20 py-12 px-margin-mobile md:px-margin-desktop border-t border-outline-variant bg-surface-bright">
+<div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase">© 2024 DIYA Silk Scarves. Secure Checkout.</p>
+<div class="flex gap-8">
+<a class="font-label-caps text-label-caps text-on-surface-variant uppercase hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant uppercase hover:text-primary transition-colors" href="#">Refund Policy</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant uppercase hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interactions for form validation focus
+        const inputs = document.querySelectorAll('.checkout-input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.querySelector('label')?.classList.add('text-primary');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.querySelector('label')?.classList.remove('text-primary');
+            });
+        });
+
+        // Floating shadow effect logic (subtle expansion on interaction)
+        const summaryCard = document.querySelector('.ambient-glow');
+        if(summaryCard) {
+            summaryCard.addEventListener('mouseenter', () => {
+                summaryCard.style.boxShadow = "0 30px 60px -12px rgba(120, 90, 0, 0.12)";
+                summaryCard.style.transform = "translateY(-2px)";
+                summaryCard.style.transition = "all 0.4s ease";
+            });
+            summaryCard.addEventListener('mouseleave', () => {
+                summaryCard.style.boxShadow = "0 20px 40px -10px rgba(120, 90, 0, 0.08)";
+                summaryCard.style.transform = "translateY(0)";
+            });
+        }
+    </script>
+</body></html>

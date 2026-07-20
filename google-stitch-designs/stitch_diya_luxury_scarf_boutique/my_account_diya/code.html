@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DIYA | My Account</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glow-hover:hover {
+            box-shadow: 0 20px 40px -10px rgba(191, 144, 1, 0.08);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d2c5ae;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#eae7e7",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f6f3f2",
+                        "on-surface-variant": "#4f4634",
+                        "surface-container": "#f0edec",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#fcf9f8",
+                        "tertiary-container": "#969797",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "surface": "#fcf9f8",
+                        "inverse-surface": "#313030",
+                        "surface-dim": "#dcd9d9",
+                        "on-background": "#1c1b1b",
+                        "surface-variant": "#e5e2e1",
+                        "inverse-on-surface": "#f3f0ef",
+                        "on-primary-fixed-variant": "#5b4300",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#f7e37c",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-secondary-fixed-variant": "#514700",
+                        "tertiary": "#5d5f5f",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#3e2d00",
+                        "on-tertiary-container": "#2e3030",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "background": "#fcf9f8",
+                        "primary-fixed": "#ffdf9d",
+                        "secondary-fixed-dim": "#dac763",
+                        "on-secondary-fixed": "#211c00",
+                        "primary-fixed-dim": "#f3bf3d",
+                        "surface-container-highest": "#e5e2e1",
+                        "outline": "#817662",
+                        "secondary-container": "#f4e07a",
+                        "outline-variant": "#d2c5ae",
+                        "on-primary-fixed": "#251a00",
+                        "on-error": "#ffffff",
+                        "secondary": "#6c5e00",
+                        "on-surface": "#1c1b1b",
+                        "primary": "#785a00",
+                        "surface-tint": "#785a00",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#716300",
+                        "inverse-primary": "#f3bf3d",
+                        "primary-container": "#bf9001"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "20px",
+                        "gutter": "24px",
+                        "margin-desktop": "60px",
+                        "unit": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "nav-link": ["Plus Jakarta Sans"],
+                        "label-caps": ["Plus Jakarta Sans"],
+                        "headline-md": ["Playfair Display"],
+                        "display-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Playfair Display"],
+                        "display-lg": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "nav-link": ["14px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                        "display-lg-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["24px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none z-50">
+<nav class="flex justify-between items-center px-margin-desktop py-6 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-12">
+<a class="text-headline-md font-headline-md tracking-tighter text-on-surface dark:text-on-surface-variant" href="#">DIYA</a>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-nav-link text-nav-link uppercase tracking-widest text-on-surface dark:text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Collections</a>
+<a class="font-nav-link text-nav-link uppercase tracking-widest text-on-surface dark:text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">New Arrivals</a>
+<a class="font-nav-link text-nav-link uppercase tracking-widest text-on-surface dark:text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Bespoke</a>
+<a class="font-nav-link text-nav-link uppercase tracking-widest text-on-surface dark:text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Heritage</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:scale-95 duration-200" data-icon="search">search</button>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim text-primary dark:text-primary-fixed-dim border-b border-primary dark:border-primary-fixed-dim pb-1 hover:scale-95 duration-200" data-icon="person">person</button>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:scale-95 duration-200" data-icon="shopping_bag">shopping_bag</button>
+</div>
+</nav>
+</header>
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col md:flex-row gap-16">
+<!-- Sidebar Navigation (Profile Area) -->
+<aside class="w-full md:w-64 flex flex-col gap-8">
+<div class="flex flex-col gap-2">
+<h1 class="font-headline-sm text-headline-sm text-primary">Sahar Al-Farsi</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant opacity-70">Gold Member since 2022</p>
+</div>
+<nav class="flex flex-col gap-1">
+<button class="flex items-center gap-4 p-4 rounded-lg bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary font-bold transition-all duration-200 group" id="btn-dashboard" onclick="switchTab('dashboard')">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</button>
+<button class="flex items-center gap-4 p-4 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-variant transition-all duration-200 group" id="btn-orders" onclick="switchTab('orders')">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-body-md text-body-md">Orders</span>
+</button>
+<button class="flex items-center gap-4 p-4 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-variant transition-all duration-200 group" id="btn-details" onclick="switchTab('details')">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Account Details</span>
+</button>
+<button class="flex items-center gap-4 p-4 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-variant transition-all duration-200 group" id="btn-shipping" onclick="switchTab('shipping')">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+<span class="font-body-md text-body-md">Shipping</span>
+</button>
+<button class="flex items-center gap-4 p-4 mt-8 rounded-lg text-error hover:bg-error-container transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md text-body-md">Sign Out</span>
+</button>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<section class="flex-1 min-w-0">
+<!-- Dashboard Tab -->
+<div class="tab-content block animate-in fade-in duration-500" id="tab-dashboard">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-12">
+<div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/30 glow-hover transition-all duration-300">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4">Total Orders</h3>
+<p class="font-headline-md text-headline-md text-on-surface">14</p>
+</div>
+<div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/30 glow-hover transition-all duration-300">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4">Loyalty Tier</h3>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+<p class="font-headline-md text-headline-md text-on-surface">Gold Elite</p>
+</div>
+</div>
+</div>
+<div class="mb-12">
+<div class="flex justify-between items-end mb-8">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Recent Purchase</h2>
+<button class="font-label-caps text-label-caps text-primary border-b border-primary hover:opacity-70 transition-opacity" onclick="switchTab('orders')">View All Orders</button>
+</div>
+<div class="bg-surface-container-lowest overflow-hidden border border-outline-variant/30 rounded-xl">
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-48 h-48 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A luxury silk scarf with intricate traditional patterns draped elegantly over a minimalist white marble pedestal. The fabric is shimmering Tekon Gold and soft ivory, captured in high-key cinematic lighting. Professional high-end fashion photography style with soft focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0uLWpN0rRT4qTOAP-ORWVkNdycCMNWVrijRasHStOm705OeaQ7cq9WPngLnDrMba3u0qJ5dudB28lbXM_7AVcjPaoJL1lKoNl-CnN8b1B394T5c690aFG9MoWOl2KePv0x5bIYw-9I8sYXO6vCmr0PsKGJ6WLXzzW09oMJfGO4gkYqePhEN1Mc07b7Npc-75giZgY4CajQwC7e59jVAouTlfVCb7zb8ZXhPrVX1RS4ZZrXJiOXhXzFmZP-kEY4S4f6LltINj9Nn9h"/>
+</div>
+<div class="flex-1 p-8 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-caps text-label-caps text-primary mb-1">Order #88219</p>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">The Heritage Silk Square — Al-Noor Edition</h4>
+</div>
+<div class="text-right">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">In Transit</span>
+</div>
+</div>
+<div class="flex justify-between items-end mt-6">
+<p class="font-body-md text-body-md text-on-surface-variant">Delivered by Oct 24</p>
+<button class="bg-primary text-on-primary px-6 py-2 font-label-caps text-label-caps uppercase tracking-widest hover:bg-primary-container hover:text-on-primary-container transition-all">Track Order</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Orders Tab (Hidden by default) -->
+<div class="tab-content hidden animate-in fade-in duration-500" id="tab-orders">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-8">Order History</h2>
+<div class="space-y-6">
+<!-- Order Row 1 -->
+<div class="p-6 border-b border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<div class="w-20 h-20 bg-surface-container rounded overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close up of a premium silk textile with golden embroidery and elegant floral motifs on a white background. Soft lighting highlighting the texture and sheen of the luxury fabric. Minimalist product photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLANFnIpDNXwbnnseVvwVpEyDZHKkn9df4aK52LDfPWslMZVJ-2VGXyOXzunQ40JKTCRnc4P9ssKAsJfmn0Okko60xFwfn9yJAoQUx8tDjE1gK9hvJtX75IkpI0UtOh5lbbu1elgBIXX2DLgXpoYaprr9BFlc2BFJjYpeV9QR1VcgVPd0CWEuVQ0TtJ9BGN6Iej3gQc6KcGJFVp4gb7BETqC6M3W6sGMZlwQ_2dDfu1wMI7L8ECW0bugrcK1OTNr9OxwgVaUDbjXul"/>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface">Midnight Serenity Scarf</h4>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Ordered Sept 12, 2024</p>
+</div>
+</div>
+<div class="flex items-center gap-12 w-full md:w-auto justify-between md:justify-end">
+<div class="text-right">
+<p class="font-body-md text-body-md text-on-surface">£185.00</p>
+<p class="text-xs text-on-surface-variant">1 Item</p>
+</div>
+<span class="bg-surface-container text-on-surface-variant px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Delivered</span>
+<button class="material-symbols-outlined text-primary" data-icon="chevron_right">chevron_right</button>
+</div>
+</div>
+<!-- Order Row 2 -->
+<div class="p-6 border-b border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<div class="w-20 h-20 bg-surface-container rounded overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A delicate ivory-colored silk hijab draped beautifully. The lighting is ethereal and soft, creating a serene and sophisticated feel. Luxury aesthetic with high-quality textile detail and soft shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv7g3kycT2Co4cQTaDImYK3H3ohSUhNzAxKVUOdFwk81zhUFUnF3CDaE3FAqef35GDUOfvfDYhwKU00cPLSt60gL36XSKqWYj1zSb79Yr_WcWd36Iq5Tga_GnM_SQtw50NCWGPqU7jhaQp6uMEx9hRzIjBAqi6cbJWARVeluk35IEGdOa1SECq6UC-x-g40u1NoWwDRqkX-frWfVik-mA_Yq7tpnj3fZVI1E-BT_dekRm1bn2O5ahLeg5kSrN3XPN-zUeTK13n8_DQ"/>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface">Celestial Ivory Hijab</h4>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Ordered Aug 02, 2024</p>
+</div>
+</div>
+<div class="flex items-center gap-12 w-full md:w-auto justify-between md:justify-end">
+<div class="text-right">
+<p class="font-body-md text-body-md text-on-surface">£120.00</p>
+<p class="text-xs text-on-surface-variant">1 Item</p>
+</div>
+<span class="bg-surface-container text-on-surface-variant px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Delivered</span>
+<button class="material-symbols-outlined text-primary" data-icon="chevron_right">chevron_right</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Account Details Tab -->
+<div class="tab-content hidden animate-in fade-in duration-500" id="tab-details">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-8">Personal Information</h2>
+<div class="bg-surface-container-lowest p-8 md:p-12 rounded-xl border border-outline-variant/30 max-w-2xl">
+<form class="space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface">First Name</label>
+<input class="bg-transparent border-0 border-b border-on-background focus:ring-0 focus:border-primary p-0 py-2 font-body-md" type="text" value="Sahar"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface">Last Name</label>
+<input class="bg-transparent border-0 border-b border-on-background focus:ring-0 focus:border-primary p-0 py-2 font-body-md" type="text" value="Al-Farsi"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface">Email Address</label>
+<input class="bg-transparent border-0 border-b border-on-background focus:ring-0 focus:border-primary p-0 py-2 font-body-md" type="email" value="sahar.alfarsi@gmail.com"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface">Contact Number</label>
+<input class="bg-transparent border-0 border-b border-on-background focus:ring-0 focus:border-primary p-0 py-2 font-body-md" type="tel" value="+44 7700 900000"/>
+</div>
+<div class="pt-6">
+<button class="bg-primary text-on-primary px-10 py-3 font-label-caps text-label-caps uppercase tracking-widest hover:opacity-90 transition-all" type="submit">Save Changes</button>
+</div>
+</form>
+</div>
+</div>
+<!-- Shipping Tab -->
+<div class="tab-content hidden animate-in fade-in duration-500" id="tab-shipping">
+<div class="flex justify-between items-end mb-8">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Saved Addresses</h2>
+<button class="font-label-caps text-label-caps text-primary border-b border-primary hover:opacity-70 transition-opacity">Add New Address</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Address Card 1 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl border border-primary/20 relative glow-hover transition-all duration-300">
+<div class="absolute top-8 right-8">
+<span class="font-label-caps text-label-caps text-primary">Default</span>
+</div>
+<h4 class="font-body-lg text-body-lg text-on-surface font-bold mb-4">Home</h4>
+<p class="text-on-surface-variant font-body-md">
+                            Sahar Al-Farsi<br/>
+                            24 Knightsbridge Gate<br/>
+                            London, SW1X 7LY<br/>
+                            United Kingdom
+                        </p>
+<div class="flex gap-6 mt-8">
+<button class="font-label-caps text-label-caps text-on-surface border-b border-on-surface hover:text-primary hover:border-primary transition-all">Edit</button>
+<button class="font-label-caps text-label-caps text-on-surface-variant opacity-50 cursor-not-allowed">Remove</button>
+</div>
+</div>
+<!-- Address Card 2 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/30 glow-hover transition-all duration-300">
+<h4 class="font-body-lg text-body-lg text-on-surface font-bold mb-4">Office</h4>
+<p class="text-on-surface-variant font-body-md">
+                            DIYA Management HQ<br/>
+                            88 Mayfair Towers<br/>
+                            London, W1K 2HA<br/>
+                            United Kingdom
+                        </p>
+<div class="flex gap-6 mt-8">
+<button class="font-label-caps text-label-caps text-on-surface border-b border-on-surface hover:text-primary hover:border-primary transition-all">Edit</button>
+<button class="font-label-caps text-label-caps text-error border-b border-error hover:opacity-70 transition-all">Remove</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-20 border-t border-outline-variant dark:border-outline bg-surface-bright dark:bg-surface-dim">
+<div class="flex flex-col md:flex-row justify-between items-start px-margin-desktop py-12 w-full max-w-container-max mx-auto">
+<div class="mb-8 md:mb-0">
+<span class="font-headline-sm text-headline-sm text-on-surface">DIYA</span>
+<p class="mt-4 max-w-xs text-on-surface-variant opacity-80">Refining modest luxury through the art of silk and light.</p>
+</div>
+<div class="grid grid-cols-2 md:flex gap-12">
+<div class="flex flex-col gap-4">
+<span class="font-label-caps text-label-caps text-primary uppercase">Assistance</span>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Care Guide</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Shipping</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-label-caps text-label-caps text-primary uppercase">Legal</span>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Returns</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+</div>
+</div>
+<div class="px-margin-desktop py-6 border-t border-outline-variant/10 text-center md:text-left">
+<p class="font-label-caps text-label-caps text-on-surface-variant opacity-60">© 2024 DIYA Silk Scarves. All rights reserved.</p>
+</div>
+</footer>
+<script>
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+                content.classList.remove('block');
+            });
+            
+            // Remove active styles from all buttons
+            const buttons = ['dashboard', 'orders', 'details', 'shipping'];
+            buttons.forEach(id => {
+                const btn = document.getElementById('btn-' + id);
+                btn.classList.remove('bg-secondary-container', 'dark:bg-secondary', 'text-on-secondary-container', 'dark:text-on-secondary', 'font-bold');
+                btn.classList.add('text-on-surface-variant', 'dark:text-on-surface-variant');
+            });
+            
+            // Show target tab
+            const targetTab = document.getElementById('tab-' + tabId);
+            targetTab.classList.remove('hidden');
+            targetTab.classList.add('block');
+            
+            // Apply active style to current button
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('bg-secondary-container', 'dark:bg-secondary', 'text-on-secondary-container', 'dark:text-on-secondary', 'font-bold');
+            activeBtn.classList.remove('text-on-surface-variant', 'dark:text-on-surface-variant');
+
+            // Scroll to top of content on mobile
+            if (window.innerWidth < 768) {
+                targetTab.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Add micro-interactions for input fields
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.querySelector('label').classList.add('text-primary');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.querySelector('label').classList.remove('text-primary');
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,22 @@
+[importlinter]
+root_package = api
+
+[importlinter:contract:feature-independence]
+name = Core Feature Independence
+type = independence
+modules =
+    api.features.auth
+    api.features.products
+    api.features.categories
+    api.features.cart
+
+[importlinter:contract:no-imports-from-admin]
+name = No imports from Admin
+type = forbidden
+source_modules =
+    api.features.auth
+    api.features.products
+    api.features.categories
+    api.features.cart
+forbidden_modules =
+    api.features.admin

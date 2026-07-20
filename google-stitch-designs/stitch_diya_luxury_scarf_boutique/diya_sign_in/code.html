@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - DIYA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-styles">
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900 min-h-screen flex flex-col items-center justify-center pt-16 pb-8">
+<!-- BEGIN: MainContainer -->
+<main class="w-full max-w-[400px] px-6 flex flex-col items-center">
+<!-- Logo -->
+<div class="mb-12">
+<h1 class="text-3xl tracking-widest font-light text-center">DIYA</h1>
+</div>
+<!-- Sign In Heading -->
+<h2 class="text-2xl mb-8 text-center">Sign in</h2>
+<!-- Continue with Shop Button -->
+<button class="w-full bg-[#5a31f4] hover:bg-[#4a28cc] text-white py-3 px-4 rounded font-medium flex items-center justify-center space-x-2 transition-colors duration-200">
+<span>Continue with Shop</span>
+</button>
+<!-- Or Separator -->
+<div class="flex items-center w-full my-6">
+<div class="flex-grow border-t border-gray-300"></div>
+<span class="px-4 text-gray-500 text-sm">or</span>
+<div class="flex-grow border-t border-gray-300"></div>
+</div>
+<!-- Email Form -->
+<form class="w-full">
+<div class="relative mb-6">
+<input class="w-full border border-gray-300 p-4 rounded focus:outline-none focus:border-gray-500 peer" id="email" name="email" placeholder="Email" required="" type="email"/>
+<button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700" type="submit">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Newsletter Checkbox -->
+<label class="flex items-start space-x-3 cursor-pointer">
+<input class="mt-1 form-checkbox h-5 w-5 text-gray-900 border-gray-300 rounded focus:ring-gray-900" type="checkbox"/>
+<span class="text-sm text-gray-600 leading-tight">
+          Keep me up to date on news and exclusive offers
+        </span>
+</label>
+</form>
+</main>
+<!-- END: MainContainer -->
+<!-- BEGIN: Footer -->
+<footer class="mt-auto pt-8 pb-4 text-center">
+<a class="text-sm text-gray-500 hover:text-gray-800 underline underline-offset-2 decoration-gray-300 hover:decoration-gray-800 transition-colors duration-200" href="#">
+      Terms of service
+    </a>
+</footer>
+<!-- END: Footer -->
+</body></html>

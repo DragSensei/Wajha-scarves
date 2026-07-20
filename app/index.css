@@ -1,1 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
 @import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-primary: #785a00;
+  --color-primary-container: #bf9001;
+  --color-on-primary: #ffffff;
+  --color-secondary: #6c5e00;
+  --color-secondary-container: #f4e07a;
+  --color-background: #fcf9f8;
+  --color-on-background: #1c1b1b;
+  --color-surface: #fcf9f8;
+  --color-surface-container: #f0edec;
+  --color-on-surface: #1c1b1b;
+  --color-outline: #817662;
+  --color-outline-variant: #d2c5ae;
+  
+  /* Enforce sharp corners everywhere as specified by design shape rules */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+/* Product Card Custom Hover Transitions */
+.card {
+  position: relative;
+}
+
+.card__img {
+  transition: opacity 0.5s ease-out;
+}
+
+.card:hover .card__img {
+  opacity: 0;
+}
+
+.card__img--hover {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  top: 0;
+  left: 0;
+  object-fit: cover;
+  transform: translateY(6px) scale(1.03);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover .card__img--hover {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Quick-Add Button Slide-up Container (Desktop) */
+.card__quick-add-container--desktop {
+  display: block;
+  width: 100%;
+  position: absolute;
+  bottom: 12px;
+  padding: 0 16px;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  transform: translateY(125%); /* Hidden off-screen */
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Hover state (slide up and become visible) */
+@media(min-width: 900px) and (hover: hover) {
+  .card__picture-container:hover .card__quick-add-container--desktop {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Admin Animations & Lively UI */
+@keyframes adminSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes adminPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-admin-view {
+  animation: adminSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-admin-card {
+  animation: adminPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+

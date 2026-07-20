@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Confirmed | DIYA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#eae7e7",
+                    "on-tertiary-fixed-variant": "#454747",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f6f3f2",
+                    "on-surface-variant": "#4f4634",
+                    "surface-container": "#f0edec",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#fcf9f8",
+                    "tertiary-container": "#969797",
+                    "tertiary-fixed-dim": "#c6c6c7",
+                    "surface": "#fcf9f8",
+                    "inverse-surface": "#313030",
+                    "surface-dim": "#dcd9d9",
+                    "on-background": "#1c1b1b",
+                    "surface-variant": "#e5e2e1",
+                    "inverse-on-surface": "#f3f0ef",
+                    "on-primary-fixed-variant": "#5b4300",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed": "#f7e37c",
+                    "on-tertiary-fixed": "#1a1c1c",
+                    "on-secondary-fixed-variant": "#514700",
+                    "tertiary": "#5d5f5f",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#3e2d00",
+                    "on-tertiary-container": "#2e3030",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#e2e2e2",
+                    "background": "#fcf9f8",
+                    "primary-fixed": "#ffdf9d",
+                    "secondary-fixed-dim": "#dac763",
+                    "on-secondary-fixed": "#211c00",
+                    "primary-fixed-dim": "#f3bf3d",
+                    "surface-container-highest": "#e5e2e1",
+                    "outline": "#817662",
+                    "secondary-container": "#f4e07a",
+                    "outline-variant": "#d2c5ae",
+                    "on-primary-fixed": "#251a00",
+                    "on-error": "#ffffff",
+                    "secondary": "#6c5e00",
+                    "on-surface": "#1c1b1b",
+                    "primary": "#785a00",
+                    "surface-tint": "#785a00",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#716300",
+                    "inverse-primary": "#f3bf3d",
+                    "primary-container": "#bf9001"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "gutter": "24px",
+                    "margin-desktop": "60px",
+                    "unit": "8px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "body-md": ["Plus Jakarta Sans"],
+                    "nav-link": ["Plus Jakarta Sans"],
+                    "label-caps": ["Plus Jakarta Sans"],
+                    "headline-md": ["Playfair Display"],
+                    "display-lg-mobile": ["Playfair Display"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Playfair Display"],
+                    "display-lg": ["Playfair Display"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "nav-link": ["14px", {"lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "400"}],
+                    "headline-md": ["32px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-sm": ["24px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .premium-glow {
+            box-shadow: 0 20px 40px -15px rgba(191, 144, 1, 0.08);
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in-up 1s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed-dim">
+<!-- Header (Suppressed Nav for Transactional Flow as per rules, but showing Brand Identity) -->
+<header class="w-full top-0 sticky z-50 bg-surface/80 backdrop-blur-md">
+<div class="flex justify-center items-center px-margin-desktop py-8 w-full max-w-container-max mx-auto">
+<h1 class="text-headline-md font-headline-md tracking-tighter text-on-surface">DIYA</h1>
+</div>
+</header>
+<main class="min-h-screen px-margin-mobile md:px-0 flex flex-col items-center justify-start pt-12 pb-24">
+<!-- Success Celebration Card -->
+<div class="w-full max-w-2xl bg-white p-8 md:p-16 premium-glow rounded-lg relative overflow-hidden animate-fade-in">
+<!-- Atmospheric Gold Accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-primary-container"></div>
+<!-- Content Container -->
+<div class="text-center space-y-8">
+<div class="flex justify-center">
+<div class="w-16 h-16 rounded-full border border-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'wght' 200;">done_all</span>
+</div>
+</div>
+<div class="space-y-4">
+<h2 class="font-headline-md text-headline-md italic">Thank You, Sarah</h2>
+<p class="font-body-md text-on-surface-variant max-w-md mx-auto">
+                        Your bespoke selection has been confirmed. We are now preparing your pieces with the utmost care, reflecting the radiance they deserve.
+                    </p>
+</div>
+<!-- Order Detail Strip -->
+<div class="py-6 border-y border-outline-variant flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="text-center md:text-left">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant">Order Number</span>
+<p class="font-body-lg text-primary font-bold">#DY-8829104</p>
+</div>
+<div class="text-center md:text-right">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant">Expected Delivery</span>
+<p class="font-body-lg text-on-surface">October 24 — 28, 2024</p>
+</div>
+</div>
+<!-- Summary Grid -->
+<div class="space-y-6 pt-4">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface tracking-widest text-center">Summary of Selection</h3>
+<div class="space-y-4">
+<!-- Item 1 -->
+<div class="flex items-center gap-4 text-left">
+<div class="w-20 h-24 bg-surface-container overflow-hidden rounded">
+<img class="w-full h-full object-cover" data-alt="A luxurious close-up shot of a silk scarf with intricate gold and ivory geometric patterns. The fabric is draped elegantly over a marble pedestal, catching soft morning light that emphasizes the rich texture and shimmer of the silk. High-end fashion editorial style with a serene and warm atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuXGXVvJyAPNZGFx-lNxgR_a9XwFxtfvB4GrWbxPSJBTCzgNvHdgzMOqROYCGjyKTnOZZz_ku3QGW9Gpk7-KCHPZ0ltgDq4PHJ5xT-x6FjpegXHt71cntVgoOTf08iigoS5-EXKcFwXm2eLsmyzm5jS0AfYOSzOftE2jf8EGPD1jOKlTqv7HJiT2zLIChaNY37fFeKPKgZkwEZ1mucwdVu6QW9OFtPeQHhB27tzz03JzPFZgEwwE56vR09j1lsvEJorNtoUOgl_kcz"/>
+</div>
+<div class="flex-1">
+<h4 class="font-headline-sm text-headline-sm text-sm">The Noor Silk Scarf</h4>
+<p class="text-label-caps text-on-surface-variant">Oversized / Gold Threading</p>
+</div>
+<p class="font-body-md">$185.00</p>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-4 text-left">
+<div class="w-20 h-24 bg-surface-container overflow-hidden rounded">
+<img class="w-full h-full object-cover" data-alt="A minimalist studio product photograph of a premium gift box set for luxury silk scarves. The box is a deep charcoal grey with a matte finish and a gold foil logo. It sits on a pristine white surface with a soft, warm glow reflecting off the gold accents. Sophisticated and high-end aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVKjBREoqPtLJmlMkB1mhSz83c_TbwoIxhuzLFXmF4MnjerQkAtdlr1QjKcsa94l4_8YhQWQctZdrsGBcF7PMU6CSU4LJ_ZSMdKZIsRVyOdTMFJiIJKVQPEy59xxjhG_EjxDIOhEY77k93yHteK-yCXxkOwiEZScoS4EvOeMyNIDs2Cf7XdYAzO2HwxZkRsou5oqfjDBZQEK14nsEnEB7cKetE00Y_SPQWSxaSvwCorVf6w1RZ3T5HeAb2LqNO01u9ZnLXef_F7wsz"/>
+</div>
+<div class="flex-1">
+<h4 class="font-headline-sm text-headline-sm text-sm">Signature Gift Packaging</h4>
+<p class="text-label-caps text-on-surface-variant">Hand-wrapped / Calligraphy Card</p>
+</div>
+<p class="font-body-md">$15.00</p>
+</div>
+</div>
+<!-- Totals -->
+<div class="space-y-2 border-t border-outline-variant pt-6">
+<div class="flex justify-between font-label-caps text-label-caps text-on-surface-variant">
+<span>Subtotal</span>
+<span>$200.00</span>
+</div>
+<div class="flex justify-between font-label-caps text-label-caps text-on-surface-variant">
+<span>Shipping (Standard)</span>
+<span>Complimentary</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="font-headline-sm text-headline-sm">Total</span>
+<span class="font-headline-sm text-headline-sm text-primary">$200.00</span>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="pt-8 flex flex-col gap-4 items-center">
+<a class="w-full md:w-auto bg-primary-container text-white font-label-caps text-label-caps px-12 py-5 rounded-full uppercase tracking-widest hover:bg-primary transition-all duration-300 transform hover:-translate-y-1 block" href="#">
+                        Continue Shopping
+                    </a>
+<button class="text-on-surface-variant font-label-caps text-label-caps underline hover:text-primary transition-colors py-2">
+                        View Detailed Receipt
+                    </button>
+</div>
+</div>
+</div>
+<!-- Secondary Content: Customer Support & Care -->
+<div class="mt-16 w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in" style="animation-delay: 0.2s">
+<div class="p-8 bg-surface-container-low rounded-lg text-center space-y-3">
+<span class="material-symbols-outlined text-primary text-2xl">auto_awesome</span>
+<h4 class="font-headline-sm text-headline-sm">Care Instructions</h4>
+<p class="font-body-md text-sm text-on-surface-variant">Maintain the radiance of your silk by following our dedicated care guide sent to your email.</p>
+</div>
+<div class="p-8 bg-surface-container-low rounded-lg text-center space-y-3">
+<span class="material-symbols-outlined text-primary text-2xl">support_agent</span>
+<h4 class="font-headline-sm text-headline-sm">Need Assistance?</h4>
+<p class="font-body-md text-sm text-on-surface-variant">Our concierge is available 24/7 to assist with any questions regarding your order.</p>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-20 border-t border-outline-variant bg-surface-bright">
+<div class="flex flex-col md:flex-row justify-between items-start px-margin-desktop py-12 w-full max-w-container-max mx-auto gap-8">
+<div class="space-y-4">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">DIYA</h3>
+<p class="font-label-caps text-label-caps text-on-surface-variant">© 2024 DIYA Silk Scarves. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap gap-x-12 gap-y-4">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Care Guide</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Shipping</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Returns</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for the button
+        document.querySelector('a[href="#"]').addEventListener('mousedown', function() {
+            this.classList.add('scale-95');
+        });
+        document.querySelector('a[href="#"]').addEventListener('mouseup', function() {
+            this.classList.remove('scale-95');
+        });
+    </script>
+</body></html>
