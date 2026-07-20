@@ -50,4 +50,6 @@ app.db
 # Uploads
 uploads/*
 !uploads/.gitkeep
+!uploads/bamboo_*.png
+
 
