@@ -108,6 +108,7 @@ def seed():
         print(f"Seeded {added_count} products from local stitch images.")
 
         # 4. Seed Admin and Client accounts
+        admin_pass = app.config.get('ADMIN_PASSWORD') or 'QWERTY'
         admin = User.query.filter_by(email='admin@diya.com').first()
         if not admin:
             admin = User(
@@ -115,9 +116,13 @@ def seed():
                 full_name='Diya Admin',
                 role='admin'
             )
-            admin.set_password('AdminPassword123!')
+            admin.set_password(admin_pass)
             db.session.add(admin)
-            print("Created Admin User: admin@diya.com / AdminPassword123!")
+            print(f"Created Admin User: admin@diya.com")
+        else:
+            admin.set_password(admin_pass)
+            print(f"Updated Admin User password for: admin@diya.com")
+
 
         client = User.query.filter_by(email='client@diya.com').first()
         if not client:
