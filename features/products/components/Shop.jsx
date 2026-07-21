@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Star, X } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { X, Heart } from 'lucide-react';
 import { api } from '@/shared/lib/api';
+import { formatPrice } from '@/shared/utils/currency';
+import { getWishlist, toggleWishlistId } from '@/shared/utils/wishlist';
 
 export default function Shop({ onAddToCart }) {
   const { categorySlug } = useParams();
@@ -13,6 +15,24 @@ export default function Shop({ onAddToCart }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [wishlist, setWishlist] = useState(getWishlist);
+  const [animatingId, setAnimatingId] = useState(null);
+
+  useEffect(() => {
+    const handleSync = () => setWishlist(getWishlist());
+    window.addEventListener('wishlist-updated', handleSync);
+    return () => window.removeEventListener('wishlist-updated', handleSync);
+  }, []);
+
+  const toggleWishlist = (id) => {
+    setAnimatingId(id);
+    setTimeout(() => setAnimatingId(null), 450);
+    const updated = toggleWishlistId(id);
+    setWishlist(updated);
+  };
+
+  const isWishlisted = (id) => Array.isArray(wishlist) && wishlist.includes(id);
 
   const [prevCategoryKey, setPrevCategoryKey] = useState(`${selectedCategory}:${searchQuery}`);
   const currentCategoryKey = `${selectedCategory}:${searchQuery}`;
@@ -50,9 +70,16 @@ export default function Shop({ onAddToCart }) {
         <h1 className="text-4xl md:text-5xl font-serif tracking-widest text-primary uppercase font-bold mb-4">
           {heroTitle}
         </h1>
-        <p className="max-w-2xl mx-auto text-sm font-sans leading-relaxed text-outline whitespace-pre-line">
-          {heroDescription}
-        </p>
+        <div className="max-w-3xl mx-auto space-y-4 text-sm font-sans leading-relaxed text-outline">
+          {heroDescription.split('\n\n').map((paragraph, index) => (
+            <p 
+              key={index} 
+              className={paragraph.startsWith('•') ? 'text-primary font-medium bg-surface-container/50 p-3 rounded border-l-2 border-primary text-left text-xs md:text-sm' : ''}
+            >
+              {paragraph}
+            </p>
+          ))}
+        </div>
         {searchQuery && (
           <button
             onClick={() => navigate(selectedCategory ? `/category/${selectedCategory}` : '/')}
@@ -63,138 +90,120 @@ export default function Shop({ onAddToCart }) {
         )}
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex flex-wrap justify-center gap-4 mb-12 border-b border-surface-container/60 pb-6">
-        <button
-          onClick={() => navigate('/')}
-          className={`text-xs font-sans tracking-widest uppercase py-2 px-4 transition-all ${
-            selectedCategory === '' 
-              ? 'border-b-2 border-primary text-primary font-bold' 
-              : 'text-outline hover:text-primary'
-          }`}
-        >
-          All Collections
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => navigate(`/category/${cat.slug}`)}
-            className={`text-xs font-sans tracking-widest uppercase py-2 px-4 transition-all ${
-              selectedCategory === cat.slug 
-                ? 'border-b-2 border-primary text-primary font-bold' 
-                : 'text-outline hover:text-primary'
-            }`}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
+
 
       {/* Products Grid */}
       {loading ? (
-        <div className="flex justify-center items-center py-24">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-8 gap-y-12">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex flex-col animate-pulse">
+              <div className="aspect-[3/4] w-full bg-slate-200 mb-4 rounded-xs"></div>
+              <div className="space-y-2 px-2 text-center flex flex-col items-center">
+                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-8 gap-y-12">
           {products.map((product) => {
             const altImage = product.images?.find(img => img.url !== product.primary_image_url)?.url;
-            const isSameImage = !altImage;
             const hoverImage = altImage || product.primary_image_url;
+            const isSameImage = !altImage;
 
             return (
               <div 
                 key={product.id} 
-                onClick={() => navigate(`/product/${product.id}`)}
-                className="card group relative flex flex-col justify-between bg-white border border-surface-container/40 p-4 transition-all hover:shadow-lg cursor-pointer"
+                className="card__container flex flex-col group relative"
               >
-                {/* Product Image */}
-                <div className="card__picture-container relative aspect-4/5 overflow-hidden mb-6 bg-surface-container/40">
-                  <img 
-                    src={product.primary_image_url || 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=600'} 
-                    alt={product.name}
-                    className="card__img w-full h-full object-cover"
-                  />
-                  <img 
-                    src={hoverImage || product.primary_image_url || 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=600'} 
-                    alt={`${product.name} alternate`}
-                    className={`card__img--hover ${isSameImage ? 'invert' : ''}`}
-                  />
-                  {product.discount_active && (
-                    <span className="absolute top-4 right-4 bg-primary text-white text-[10px] font-sans tracking-wider uppercase px-3 py-1 font-bold z-10">
-                      Sale
-                    </span>
-                  )}
-                  {/* Desktop Quick-Add Button (Slides up) */}
+                {/* Image Container Box (no outer card borders or padding) */}
+                <div className="card__picture-container relative w-full aspect-[3/4] overflow-hidden bg-surface-container-low mb-4">
+                  <Link to={`/product/${product.id}`} className="card card--center block w-full h-full">
+                    <img 
+                      src={product.primary_image_url || 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=600'} 
+                      alt={product.name}
+                      className="card__img w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    {hoverImage && (
+                      <img 
+                        src={hoverImage} 
+                        alt={`${product.name} alternate`}
+                        className={`card__img--hover ${isSameImage ? 'scale-x-[-1]' : ''}`}
+                      />
+                    )}
+                    
+                    {/* Sold Out / Discount Badges */}
+                    {product.stock <= 0 ? (
+                      <div className="card__badges absolute top-4 left-4 z-10">
+                        <div className="card__badges--item bg-surface-container text-outline text-[10px] font-sans tracking-widest uppercase px-3 py-1 font-bold" data-custom-badge="sold-out">
+                          Sold out
+                        </div>
+                      </div>
+                    ) : product.discount_active ? (
+                      <div className="card__badges absolute top-4 left-4 z-10">
+                        <div className="card__badges--item bg-primary text-white text-[10px] font-sans tracking-widest uppercase px-3 py-1 font-bold">
+                          Sale
+                        </div>
+                      </div>
+                    ) : null}
+                  </Link>
+
+                  {/* Wishlist Button Overlay */}
+                  <div className="xb-wishlist-button-collection absolute top-4 right-4 z-10">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleWishlist(product.id);
+                      }}
+                      className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-xs text-outline hover:text-primary transition-colors cursor-pointer"
+                      aria-label={`Toggle wishlist for ${product.name}`}
+                    >
+                      <Heart 
+                        className={`w-[18px] h-[18px] transition-all duration-300 ${
+                          isWishlisted(product.id) ? 'fill-red-500 text-red-500' : 'text-outline hover:text-red-400'
+                        } ${animatingId === product.id ? 'animate-heart-pop' : ''}`} 
+                      />
+                    </button>
+                  </div>
+
+                  {/* Desktop Quick-Add Button overlay (slides up/fades in on hover) */}
                   <div className="card__quick-add-container--desktop">
                     <button
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         onAddToCart(product);
                       }}
-                      className="w-full bg-white/95 backdrop-blur-xs text-primary hover:bg-primary hover:text-white text-xs font-sans tracking-widest uppercase py-3 transition-colors font-medium shadow-md cursor-pointer border border-primary/20"
+                      disabled={product.stock <= 0}
+                      className="w-full bg-white/90 backdrop-blur-xs text-on-surface font-sans text-[11px] font-bold tracking-widest py-3 uppercase border border-outline-variant hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Quick Add
+                      {product.stock > 0 ? 'Add to bag' : 'Sold out'}
                     </button>
                   </div>
                 </div>
 
-                {/* Product Info */}
-                <div className="text-center flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-base font-serif tracking-wide text-on-background font-medium mb-2 hover:text-primary transition-colors">
-                      <Link to={`/product/${product.id}`}>{product.name}</Link>
-                    </h3>
-                    
-                    {/* Category Label */}
-                    <div className="text-[10px] font-sans tracking-widest text-outline uppercase mb-3">
-                      {product.category}
-                    </div>
-
-                    {/* Ratings */}
-                    <div className="flex justify-center items-center space-x-1 mb-4 text-primary">
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <Star className="w-3.5 h-3.5 text-outline" />
-                      <span className="text-[10px] text-outline font-sans pl-1">(12)</span>
-                    </div>
-                  </div>
-
-                  {/* Price and Action */}
-                  <div>
-                    <div className="mb-4">
-                      {product.discount_active ? (
-                        <div className="flex justify-center items-center space-x-2">
-                          <span className="text-xs font-sans line-through text-outline">
-                            ${product.original_price.toFixed(2)}
-                          </span>
-                          <span className="text-sm font-sans font-bold text-primary">
-                            ${product.discounted_price.toFixed(2)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-sans font-bold text-on-background">
-                          ${product.original_price.toFixed(2)}
+                {/* Centered Name and Price underneath */}
+                <Link to={`/product/${product.id}`} className="text-center px-2 block mt-1 hover:no-underline">
+                  <h3 className="card__title font-serif text-sm font-semibold text-on-background group-hover:text-primary transition-colors duration-300 mb-2 leading-snug">
+                    {product.name}
+                  </h3>
+                  <div className="card__price text-xs font-sans text-outline tracking-wider">
+                    {product.discount_active ? (
+                      <div className="flex justify-center items-center space-x-2">
+                        <span className="line-through text-[11px] text-outline/70">
+                          {formatPrice(product.original_price)}
                         </span>
-                      )}
-                    </div>
-
-                    {/* Mobile/Tablet Quick Add Button (hidden on desktop) */}
-                    <div className="min-[900px]:hidden">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddToCart(product);
-                        }}
-                        className="w-full bg-primary hover:bg-primary-container text-white text-xs font-sans tracking-widest uppercase py-3 transition-colors font-medium"
-                      >
-                        Quick Add
-                      </button>
-                    </div>
+                        <span className="font-bold text-primary">
+                          {formatPrice(product.discounted_price)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span>{formatPrice(product.original_price)}</span>
+                    )}
                   </div>
-                </div>
+                </Link>
               </div>
             );
           })}

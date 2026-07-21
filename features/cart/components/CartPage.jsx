@@ -1,5 +1,6 @@
 import { X, Trash2, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatPrice } from '@/shared/utils/currency';
 
 export default function CartPage({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem }) {
   const subtotal = cartItems.reduce((acc, item) => {
@@ -64,7 +65,7 @@ export default function CartPage({ isOpen, onClose, cartItems, onUpdateQuantity,
                         {item.name}
                       </h4>
                       <p className="text-[10px] font-sans tracking-wider text-outline uppercase mb-2">
-                        ${price.toFixed(2)}
+                        {formatPrice(price)}
                       </p>
                     </div>
 
@@ -105,7 +106,7 @@ export default function CartPage({ isOpen, onClose, cartItems, onUpdateQuantity,
           <div className="p-6 border-t border-surface-container/60 bg-surface-container/10">
             <div className="flex justify-between items-center mb-6">
               <span className="text-xs font-sans tracking-widest uppercase text-outline">Subtotal</span>
-              <span className="text-lg font-sans font-bold text-on-background">${subtotal.toFixed(2)}</span>
+              <span className="text-lg font-sans font-bold text-on-background">{formatPrice(subtotal)}</span>
             </div>
             
             <Link 

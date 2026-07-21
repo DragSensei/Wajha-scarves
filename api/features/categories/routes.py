@@ -9,23 +9,59 @@ from api.core.utils import generate_slug
 from api.features.categories.services import is_descendant, serialize_category
 from api.features.categories.schemas import validate_category, SLUG_REGEX
 
+# Caches for Categories
+_CATEGORIES_CACHE = None
+
+def get_categories_tree_cached():
+    global _CATEGORIES_CACHE
+    if _CATEGORIES_CACHE is None:
+        # ponytail: Point 17 — Fetch all categories flat in 1 query and build the tree in Python
+        # to avoid N+1 queries for self-referential children of arbitrary depth
+        all_cats = Category.query.all()
+        cat_map = {c.id: {
+            'id': c.id,
+            'name': c.name,
+            'slug': c.slug,
+            'description': c.description,
+            'parent_id': c.parent_id,
+            'children': []
+        } for c in all_cats}
+        
+        for c in all_cats:
+            if c.parent_id and c.parent_id in cat_map:
+                cat_map[c.parent_id]['children'].append(cat_map[c.id])
+                
+        _CATEGORIES_CACHE = cat_map
+    return _CATEGORIES_CACHE
+
+def invalidate_categories_cache():
+    global _CATEGORIES_CACHE
+    _CATEGORIES_CACHE = None
+
 @categories_bp.route('', methods=['GET'])
 @limiter.limit("200 per day; 50 per hour")
 def get_categories():
     parent_id_val = request.args.get('parent_id')
+    cat_map = get_categories_tree_cached()
+    
     if parent_id_val is not None:
         if parent_id_val.lower() in ('null', 'none', ''):
-            query = Category.query.filter(Category.parent_id == None)
+            results = [data for data in cat_map.values() if data['parent_id'] is None]
         else:
             try:
-                query = Category.query.filter(Category.parent_id == int(parent_id_val))
+                p_id = int(parent_id_val)
+                parent_data = cat_map.get(p_id)
+                results = parent_data['children'] if parent_data else []
             except ValueError:
                 return jsonify({"error": "parent_id must be an integer"}), 400
     else:
-        query = Category.query
+        # Only return top-level categories when all categories are requested flat,
+        # but with children fully nested in them, or all flat?
+        # Wait, the original code returned a flat list of ALL categories, but with immediate children nested.
+        # Let's match original structure exactly: a list of all categories, each having children.
+        results = list(cat_map.values())
         
-    categories = query.all()
-    return jsonify([serialize_category(c) for c in categories])
+    return jsonify(results)
 
 @categories_bp.route('', methods=['POST'])
 @admin_required
@@ -68,6 +104,7 @@ def create_category():
         )
         db.session.add(new_cat)
         db.session.commit()
+        invalidate_categories_cache()
         return jsonify(serialize_category(new_cat)), 201
     except Exception as e:
         db.session.rollback()
@@ -131,6 +168,7 @@ def update_category(category_id):
             category.parent_id = parent_id
             
         db.session.commit()
+        invalidate_categories_cache()
         return jsonify(serialize_category(category))
     except Exception as e:
         db.session.rollback()
@@ -156,6 +194,7 @@ def delete_category(category_id):
     try:
         db.session.delete(category)
         db.session.commit()
+        invalidate_categories_cache()
         return '', 204
     except Exception as e:
         db.session.rollback()

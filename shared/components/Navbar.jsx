@@ -1,18 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, Heart } from 'lucide-react';
 import { api } from '@/shared/lib/api';
+import { getWishlist } from '@/shared/utils/wishlist';
 
 export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
   const [categories, setCategories] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [wishlistCount, setWishlistCount] = useState(() => getWishlist().length);
+  const [isWishlistBouncing, setIsWishlistBouncing] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     api.getCategories().then(setCategories);
+  }, []);
+
+  useEffect(() => {
+    const handleSync = () => {
+      const newCount = getWishlist().length;
+      setWishlistCount(prev => {
+        if (newCount > prev) {
+          setIsWishlistBouncing(true);
+          setTimeout(() => setIsWishlistBouncing(false), 450);
+        }
+        return newCount;
+      });
+    };
+    window.addEventListener('wishlist-updated', handleSync);
+    return () => window.removeEventListener('wishlist-updated', handleSync);
   }, []);
 
   const handleSearch = (e) => {
@@ -55,14 +73,11 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
         {/* Center: Brand Logo & Emblem */}
         <div className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center">
           <Link to="/" className="flex flex-col items-center group">
-            {/* Emblem */}
-            <svg className="w-5 h-5 text-primary mb-0.5 transition-transform duration-700 group-hover:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4z" />
-            </svg>
-            <span className="text-base md:text-lg font-serif tracking-[0.25em] text-primary uppercase font-semibold leading-none">
-              Diya
-            </span>
+            <img 
+              src="/diya-logo.png" 
+              alt="Diya Logo" 
+              className="h-8 md:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+            />
           </Link>
         </div>
 
@@ -117,6 +132,20 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             </Link>
           )}
 
+          {/* Wishlist Trigger */}
+          <Link 
+            to="/wishlist" 
+            className="relative text-on-background hover:text-primary transition-transform duration-200 hover:scale-110 cursor-pointer focus:outline-hidden"
+            aria-label="Wishlist"
+          >
+            <Heart className={`w-5 h-5 transition-colors ${wishlistCount > 0 ? 'text-red-500 fill-red-500/20' : ''} ${isWishlistBouncing ? 'animate-heart-pop text-red-500' : ''}`} />
+            {wishlistCount > 0 && (
+              <span className={`absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center font-bold font-sans rounded-full ${isWishlistBouncing ? 'animate-badge-bounce' : ''}`}>
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
           {/* Shopping Cart Trigger */}
           <button 
             onClick={onCartClick}
@@ -131,30 +160,31 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             )}
           </button>
         </div>
-      </header>
 
-      {/* Floating Search Bar (Smooth slide-down / fade-in animation) */}
-      <div 
-        className={`absolute top-28 md:top-32 left-0 w-full bg-white border-b border-surface-container z-30 p-4 shadow-md transition-all duration-300 ease-in-out ${
-          isSearchOpen 
-            ? 'opacity-100 translate-y-0 pointer-events-auto' 
-            : 'opacity-0 -translate-y-4 pointer-events-none'
-        }`}
-      >
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto flex items-center border border-primary p-2 bg-white">
-          <input 
-            type="text" 
-            placeholder="Search premium scarves..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full font-sans text-sm focus:outline-hidden px-2 py-1.5"
-            autoFocus={isSearchOpen}
-          />
-          <button type="submit" className="bg-primary text-white text-xs font-sans tracking-widest uppercase px-5 py-2.5 hover:bg-primary-container transition-colors cursor-pointer">
-            Search
-          </button>
-        </form>
-      </div>
+        {/* Floating Search Bar (Smooth slide-down / fade-in animation) */}
+        {/* ponytail: nested inside sticky header so it moves/stays with the navbar */}
+        <div 
+          className={`absolute top-full left-0 w-full bg-white border-b border-surface-container z-30 p-4 shadow-md transition-all duration-300 ease-in-out ${
+            isSearchOpen 
+              ? 'opacity-100 translate-y-0 pointer-events-auto' 
+              : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto flex items-center border border-primary p-2 bg-white">
+            <input 
+              type="text" 
+              placeholder="Search premium scarves..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full font-sans text-sm focus:outline-hidden px-2 py-1.5"
+              autoFocus={isSearchOpen}
+            />
+            <button type="submit" className="bg-primary text-white text-xs font-sans tracking-widest uppercase px-5 py-2.5 hover:bg-primary-container transition-colors cursor-pointer">
+              Search
+            </button>
+          </form>
+        </div>
+      </header>
 
       {/* Side-out Categories Navigation (Left drawer) */}
       {/* Backdrop */}
@@ -201,9 +231,18 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             ))}
             
             <Link 
+              to="/wishlist" 
+              onClick={() => setIsMenuOpen(false)}
+              className="text-xs font-sans tracking-widest text-outline uppercase hover:text-primary transition-colors pt-6 border-t border-surface-container/40 flex justify-between items-center"
+            >
+              <span>Wishlist ({wishlistCount})</span>
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+            </Link>
+
+            <Link 
               to="/our-story" 
               onClick={() => setIsMenuOpen(false)}
-              className="text-xs font-sans tracking-widest text-outline uppercase hover:text-primary transition-colors pt-6 border-t border-surface-container/40"
+              className="text-xs font-sans tracking-widest text-outline uppercase hover:text-primary transition-colors pt-3"
             >
               Our Story
             </Link>

@@ -45,9 +45,11 @@ def api_create_order():
     city = data.get('city')
     postal_code = data.get('postalCode')
     phone = data.get('phone')
-    total_amount = float(data.get('total'))
+    total_amount = 0.0
     items_summary = data.get('items', 'Unknown Items')
     raw_items = data.get('order_items', [])
+
+    from api.core.utils import calculate_discounted_price
 
     try:
         user_id = None
@@ -62,6 +64,24 @@ def api_create_order():
         except AuthError:
             pass
 
+        # Validate items and calculate server-side price/stock
+        processed_items = []
+        for item in raw_items:
+            pid = item.get('product_id') or item.get('id')
+            qty = int(item.get('quantity', 1))
+            if not pid or qty < 1:
+                continue
+            product = db.session.get(Product, int(pid))
+            if not product:
+                return jsonify({'error': f'Product {pid} not found'}), 400
+            if product.stock < qty:
+                return jsonify({'error': f'Insufficient stock for product "{product.name}". Available: {product.stock}'}), 400
+            
+            price = calculate_discounted_price(product)
+            total_amount += price * qty
+            product.stock -= qty
+            processed_items.append((product, qty, price))
+
         detailed_name = f"{customer_name} — Ordered: {items_summary[:100]}"
         new_order = Order(
             user_id=user_id,
@@ -71,19 +91,19 @@ def api_create_order():
             city=city,
             postal_code=postal_code,
             phone=phone,
-            total_amount=total_amount,
+            total_amount=round(total_amount, 2),
             status='pending'
         )
         db.session.add(new_order)
         db.session.flush()
 
-        for item in raw_items:
+        for product, qty, price in processed_items:
             order_item = OrderItem(
                 order_id=new_order.id,
-                product_id=item.get('product_id') or item.get('id'),
-                product_name=item.get('name'),
-                quantity=int(item.get('quantity', 1)),
-                price_at_order=float(item.get('price', 0))
+                product_id=product.id,
+                product_name=product.name,
+                quantity=qty,
+                price_at_order=price
             )
             db.session.add(order_item)
 

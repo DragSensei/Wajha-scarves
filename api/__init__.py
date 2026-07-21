@@ -10,8 +10,10 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
+import secrets
+
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'default_secret_key_change_me')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'default_admin_password_change_me')
     
     # Neon database string in prod, SQLite locally
@@ -34,7 +36,7 @@ class Config:
     }
 
     # JWT Authentication Configuration
-    JWT_SECRET = os.environ.get('JWT_SECRET', 'default_jwt_secret_change_me')
+    JWT_SECRET = os.environ.get('JWT_SECRET') or secrets.token_hex(32)
     JWT_ALGORITHM = os.environ.get('JWT_ALGORITHM', 'HS256')
     JWT_ISSUER = os.environ.get('JWT_ISSUER', None)
     AUTH_MODE = os.environ.get('AUTH_MODE', 'local')
@@ -96,6 +98,7 @@ def create_app(config_class=Config):
 
     # Public image serving route
     @app.route('/api/uploads/<path:filename>')
+    @limiter.exempt
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 

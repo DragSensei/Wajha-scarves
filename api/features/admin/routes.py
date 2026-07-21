@@ -54,7 +54,8 @@ def serialize_order(order):
     account_info = None
     user = None
     if order.user_id:
-        user = db.session.get(User, order.user_id)
+        # ponytail: Point 15 — use eager loaded user relationship directly to avoid db.session.get round trip
+        user = order.user
     elif order.customer_email:
         user = User.query.filter_by(email=order.customer_email).first()
 
@@ -166,7 +167,14 @@ def delete_user(user_id):
 @admin_required
 @limiter.limit("200 per day; 50 per hour")
 def get_orders():
-    query = Order.query.order_by(Order.created_at.desc())
+    from sqlalchemy.orm import joinedload, selectinload
+    # ponytail: Point 15 — eager load user and items (selectinload is safer for 1-to-many items to avoid row fan-out)
+    # ponytail: Point 16 — Offset pagination works for now. TODO: implement keyset/cursor pagination at scale.
+    query = Order.query.options(
+        joinedload(Order.user),
+        selectinload(Order.items)
+    ).order_by(Order.created_at.desc())
+    
     pagination = paginate_query(query, request)
     serialized_orders = [serialize_order(o) for o in pagination.items]
     return jsonify({

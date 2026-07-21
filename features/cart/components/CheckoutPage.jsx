@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react';
 import { api } from '@/shared/lib/api';
+import { formatPrice } from '@/shared/utils/currency';
 
 export default function CheckoutPage({ cartItems, onClearCart, user }) {
   const navigate = useNavigate();
@@ -216,7 +217,7 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
                     <span className="font-medium text-on-background">{item.name}</span>
                     <span className="text-outline pl-2">x{item.quantity}</span>
                   </div>
-                  <span className="font-bold text-on-background">${(price * item.quantity).toFixed(2)}</span>
+                  <span className="font-bold text-on-background">{formatPrice(price * item.quantity)}</span>
                 </div>
               );
             })}
@@ -225,15 +226,15 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
           <div className="border-t border-surface-container/60 pt-6 space-y-3">
             <div className="flex justify-between text-xs font-sans text-outline">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-xs font-sans text-outline">
               <span>Shipping & duties</span>
-              <span>${shipping.toFixed(2)}</span>
+              <span>{formatPrice(shipping)}</span>
             </div>
             <div className="flex justify-between text-sm font-sans text-on-background font-bold pt-3 border-t border-surface-container">
               <span>Total amount</span>
-              <span className="text-primary">${total.toFixed(2)}</span>
+              <span className="text-primary">{formatPrice(total)}</span>
             </div>
           </div>
         </div>

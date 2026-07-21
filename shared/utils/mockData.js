@@ -2,7 +2,13 @@ export const CATEGORIES = [
   { id: 1, name: "Silk Scarves", slug: "silk-scarves", description: "Premium pure silk scarves with soft texture and elegant shine" },
   { id: 2, name: "Chiffon Hijabs", slug: "chiffon-hijabs", description: "Lightweight and breathable georgette chiffon hijabs" },
   { id: 3, name: "Modal Scarves", slug: "modal-scarves", description: "Ultra-soft modal blend everyday essentials" },
-  { id: 4, name: "Luxury Collection", slug: "luxury-collection", description: "Exclusive gold embroidered masterpieces" }
+  { id: 4, name: "Luxury Collection", slug: "luxury-collection", description: "Exclusive gold embroidered masterpieces" },
+  { 
+    id: 5, 
+    name: "Your Birthday Scarf", 
+    slug: "your-birthday-scarf", 
+    description: "Every month has a story, and every story has a flower that blooms just for you.\n\nIntroducing our unique, customized scarf line where every month comes alive with its own signature blossom. Just like nature, we believe every woman blooms in her own beautiful time.\n\nWhether it’s your birth month flower or a special memory you want to carry with you, these scarves are designed to be uniquely yours.\n\n• The Perfect Self-Love Treat: Wear your own month and embrace your inner bloom.\n• The Ultimate Gift: Celebrate your bestie, your mom, or a loved one with a gift that’s made just for them."
+  }
 ];
 
 export const PRODUCTS = [

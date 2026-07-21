@@ -148,8 +148,12 @@ def require_auth(f):
             
             if current_app.config.get('AUTH_MODE') == 'local':
                 from api.core.models import User
+                from sqlalchemy.orm import load_only
                 user_id = payload.get('user_id') or payload.get('sub')
-                user = db.session.get(User, int(user_id))
+                # ponytail: Point 20 — load only critical auth columns initially to keep auth checks lightweight
+                user = User.query.options(load_only(
+                    User.id, User.email, User.role, User.full_name, User.token_version
+                )).filter(User.id == int(user_id)).first()
                 if not user:
                     return jsonify({"error": "User not found"}), 401
                 request.current_user = user

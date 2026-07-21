@@ -3,10 +3,14 @@ from api.features.products import products_bp
 from api.core.models import Product, ProductImage, Category
 from api.core.db import db
 from api.core.extensions import limiter
-from api.core.decorators import admin_required
+from api.core.decorators import admin_required, require_auth
 from api.features.products.services import (
     delete_product_helper,
-    process_and_save_image
+    process_and_save_image,
+    get_user_wishlist,
+    add_to_wishlist,
+    remove_from_wishlist,
+    sync_user_wishlist
 )
 from api.features.products.schemas import validate_product
 from api.core.utils import paginate_query, serialize_product, get_image_url
@@ -16,32 +20,44 @@ from api.core.utils import paginate_query, serialize_product, get_image_url
 @products_bp.route('', methods=['GET'])
 @limiter.limit("200 per day; 50 per hour")
 def get_products():
-    query = Product.query
+    from sqlalchemy.orm import joinedload, selectinload
+    
+    # ponytail: Point 10 — build lean query to get count before adding eager-load options
+    count_query = Product.query
+    query = Product.query.options(
+        joinedload(Product.category_ref),
+        selectinload(Product.images) # ponytail: Point 8 — selectinload avoids row fan-out for 1-to-many images relationship
+    )
     
     category_filter = request.args.get('category')
     search_query = request.args.get('q') or request.args.get('search')
     from sqlalchemy import or_
 
     if category_filter:
-        query = query.outerjoin(Category, Product.category_id == Category.id)
-        query = query.filter(
-            or_(
-                Category.slug == category_filter,
-                db.and_(Product.category_id == None, Product.category == category_filter)
-            )
+        filter_clause = or_(
+            Category.slug == category_filter,
+            db.and_(Product.category_id == None, Product.category == category_filter)
         )
+        count_query = count_query.outerjoin(Category, Product.category_id == Category.id).filter(filter_clause)
+        query = query.outerjoin(Category, Product.category_id == Category.id).filter(filter_clause)
         
     if search_query:
         term = f"%{search_query.strip()}%"
-        query = query.filter(
-            or_(
-                Product.name.ilike(term),
-                Product.description.ilike(term)
-            )
+        # ponytail: Point 11 — ILIKE '%term%' search does not use btree indexes.
+        # TODO: Add pg_trgm index or full-text search column when catalog scales.
+        filter_clause = or_(
+            Product.name.ilike(term),
+            Product.description.ilike(term)
         )
+        count_query = count_query.filter(filter_clause)
+        query = query.filter(filter_clause)
         
     query = query.order_by(Product.created_at.desc())
-    pagination = paginate_query(query, request)
+    
+    # Execute lean count query
+    total = count_query.distinct().count()
+    
+    pagination = paginate_query(query, request, total=total)
     serialized_products = [serialize_product(p) for p in pagination.items]
 
     return jsonify({
@@ -59,7 +75,13 @@ def get_products():
 @products_bp.route('/<int:product_id>', methods=['GET'])
 @limiter.limit("200 per day; 50 per hour")
 def get_product(product_id):
-    product = db.session.get(Product, product_id)
+    from sqlalchemy.orm import joinedload, selectinload
+    # ponytail: Point 9 — single product detail view should also eager load images & category
+    product = Product.query.options(
+        joinedload(Product.category_ref),
+        selectinload(Product.images)
+    ).filter(Product.id == product_id).first()
+    
     if not product:
         return jsonify({"error": "Product not found"}), 404
     return jsonify(serialize_product(product))
@@ -215,7 +237,6 @@ def get_product_images(product_id):
     if not product:
         return jsonify({"error": "Product not found"}), 404
         
-    images = sorted(product.images, key=lambda x: x.sort_order)
     return jsonify([
         {
             'id': img.id,
@@ -224,5 +245,69 @@ def get_product_images(product_id):
             'sort_order': img.sort_order,
             'product_id': img.product_id
         }
-        for img in images
+        for img in product.images
     ])
+
+
+# ----------------- Wishlist Routes -----------------
+
+@products_bp.route('/wishlist', methods=['GET'])
+@require_auth
+@limiter.limit("200 per day; 50 per hour")
+def get_wishlist_route():
+    try:
+        user_id = request.current_user.id
+        result = get_user_wishlist(db.session, user_id, request=request)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@products_bp.route('/wishlist', methods=['POST'])
+@require_auth
+@limiter.limit("200 per day; 50 per hour")
+def add_to_wishlist_route():
+    try:
+        user_id = request.current_user.id
+        data = request.get_json() or {}
+        product_id = data.get('product_id')
+        if not product_id:
+            return jsonify({"error": "product_id is required"}), 400
+        
+        wishlist_ids = add_to_wishlist(db.session, user_id, int(product_id))
+        return jsonify({"wishlist": wishlist_ids}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@products_bp.route('/wishlist/<int:product_id>', methods=['DELETE'])
+@require_auth
+@limiter.limit("200 per day; 50 per hour")
+def remove_from_wishlist_route(product_id):
+    try:
+        user_id = request.current_user.id
+        wishlist_ids = remove_from_wishlist(db.session, user_id, product_id)
+        return jsonify({"wishlist": wishlist_ids}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@products_bp.route('/wishlist/sync', methods=['POST'])
+@require_auth
+@limiter.limit("200 per day; 50 per hour")
+def sync_wishlist_route():
+    try:
+        user_id = request.current_user.id
+        data = request.get_json() or {}
+        product_ids = data.get('product_ids', [])
+        wishlist_ids = sync_user_wishlist(db.session, user_id, product_ids)
+        return jsonify({"wishlist": wishlist_ids}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

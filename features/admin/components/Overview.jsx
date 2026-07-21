@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShoppingBag, DollarSign, Package } from 'lucide-react';
 import { api } from '@/shared/lib/api';
+import { formatPrice } from '@/shared/utils/currency';
 
 export default function Overview() {
   const [stats, setStats] = useState({
@@ -28,7 +29,7 @@ export default function Overview() {
   }, []);
 
   const cardItems = [
-    { title: 'Total Sales', value: `$${stats.salesTotal.toFixed(2)}`, icon: DollarSign, color: 'text-green-600' },
+    { title: 'Total Sales', value: formatPrice(stats.salesTotal), icon: DollarSign, color: 'text-green-600' },
     { title: 'Orders Placed', value: stats.ordersCount, icon: ShoppingBag, color: 'text-blue-600' },
     { title: 'Products Listed', value: stats.productsCount, icon: Package, color: 'text-primary' },
     { title: 'Categories', value: stats.categoriesCount, icon: Package, color: 'text-indigo-600' },

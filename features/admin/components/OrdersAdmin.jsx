@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Check, Eye, X, User, Phone, Mail, MapPin, Calendar, Package } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import Pagination from '@/shared/components/Pagination';
+import { formatPrice } from '@/shared/utils/currency';
 
 const PAGE_SIZE = 12;
 
@@ -41,8 +42,34 @@ export default function OrdersAdmin() {
       </h1>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="bg-white border border-surface-container overflow-hidden animate-pulse">
+          <table className="w-full text-left border-collapse text-xs font-sans">
+            <thead>
+              <tr className="bg-surface-container/50 border-b border-surface-container uppercase tracking-widest text-[10px] text-outline font-bold">
+                <th className="p-4">Order ID</th>
+                <th className="p-4">Customer</th>
+                <th className="p-4">Items Summary</th>
+                <th className="p-4 text-right">Total</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="border-b border-surface-container/60">
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-8"></div></td>
+                  <td className="p-4">
+                    <div className="h-4 bg-slate-200 rounded w-1/2 mb-1"></div>
+                    <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                  </td>
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-2/3"></div></td>
+                  <td className="p-4 text-right"><div className="h-4 bg-slate-200 rounded w-12 ml-auto"></div></td>
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="bg-white border border-surface-container overflow-hidden">
@@ -70,7 +97,7 @@ export default function OrdersAdmin() {
                     <div className="text-[10px] text-outline">{o.customer_email}</div>
                   </td>
                   <td className="p-4 text-outline max-w-xs truncate">{o.items_summary}</td>
-                  <td className="p-4 text-right font-bold">${o.total_amount.toFixed(2)}</td>
+                  <td className="p-4 text-right font-bold">{formatPrice(o.total_amount)}</td>
                   <td className="p-4 text-center">
                     <span className={`text-[10px] px-2.5 py-1 tracking-wider uppercase font-bold ${
                       o.status === 'completed' 
@@ -225,8 +252,8 @@ export default function OrdersAdmin() {
                       <tr key={item.id || index} className="border-b border-surface-container/40">
                         <td className="p-3 font-medium text-on-background">{item.product_name}</td>
                         <td className="p-3 text-center text-outline">{item.quantity}</td>
-                        <td className="p-3 text-right text-outline">${item.price_at_order.toFixed(2)}</td>
-                        <td className="p-3 text-right font-bold text-on-background">${(item.quantity * item.price_at_order).toFixed(2)}</td>
+                        <td className="p-3 text-right text-outline">{formatPrice(item.price_at_order)}</td>
+                        <td className="p-3 text-right font-bold text-on-background">{formatPrice(item.quantity * item.price_at_order)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -242,7 +269,7 @@ export default function OrdersAdmin() {
             <div className="border-t border-surface-container pt-4 flex justify-between items-center">
               <div>
                 <div className="text-[10px] font-sans tracking-widest uppercase text-outline">Order Total</div>
-                <div className="text-xl font-bold font-mono text-primary">${selectedOrder.total_amount.toFixed(2)}</div>
+                <div className="text-xl font-bold font-mono text-primary">{formatPrice(selectedOrder.total_amount)}</div>
               </div>
               <div className="flex space-x-3">
                 {selectedOrder.status === 'pending' && (

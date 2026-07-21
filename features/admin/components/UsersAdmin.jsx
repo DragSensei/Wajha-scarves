@@ -35,8 +35,32 @@ export default function UsersAdmin() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="bg-white border border-surface-container overflow-hidden animate-pulse">
+          <table className="w-full text-left border-collapse text-xs font-sans">
+            <thead>
+              <tr className="bg-surface-container/50 border-b border-surface-container uppercase tracking-widest text-[10px] text-outline font-bold">
+                <th className="p-4">User Name</th>
+                <th className="p-4">Email</th>
+                <th className="p-4">Role</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="border-b border-surface-container/60">
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-1/2"></div></td>
+                  <td className="p-4">
+                    <div className="h-4 bg-slate-200 rounded w-2/3 mb-1"></div>
+                    <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                  </td>
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-16"></div></td>
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                  <td className="p-4"><div className="h-4 bg-slate-200 rounded w-12 mx-auto"></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="bg-white border border-surface-container overflow-hidden">

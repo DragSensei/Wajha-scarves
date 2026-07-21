@@ -13,38 +13,7 @@ from api.core.models import Setting, ProductImage
 Image.MAX_IMAGE_PIXELS = 1920 * 1080 * 2
 logger = logging.getLogger(__name__)
 
-def calculate_discounted_price(product):
-    """
-    Calculates the discounted price of a product based on global sale settings.
-    Ensures non-stacking of discounts, handles edge cases for invalid/negative percentages.
-    """
-    discount_active = Setting.get_setting('discount_active') == 'true'
-    try:
-        discount_percent = float(Setting.get_setting('discount_percent') or 0)
-    except ValueError:
-        discount_percent = 0
-
-    if discount_percent < 0 or discount_percent > 100:
-        return product.price
-
-    cats_setting = Setting.get_setting('discount_categories')
-    discount_categories = [c.strip() for c in cats_setting.split(',')] if cats_setting else []
-
-    ids_setting = Setting.get_setting('discount_product_ids')
-    discount_product_ids = [i.strip() for i in ids_setting.split(',')] if ids_setting else []
-
-    if not discount_active or discount_percent <= 0:
-        return product.price
-
-    prod_category = product.category_ref.slug if product.category_ref else product.category
-    is_category_match = prod_category in discount_categories
-    is_item_match = str(product.id) in discount_product_ids
-
-    if is_category_match or is_item_match:
-        return product.price * (1.0 - (discount_percent / 100.0))
-
-    return product.price
-
+from api.core.utils import calculate_discounted_price
 
 def process_and_save_image(image_file, upload_dir):
     """
@@ -123,3 +92,75 @@ def delete_product_helper(db_session, product, upload_dir):
                 os.remove(filepath)
         except Exception as e:
             logger.error(f"Failed to delete physical file {filepath}: {str(e)}")
+
+
+def get_user_wishlist_ids(db_session, user_id):
+    from api.core.models import WishlistItem
+    items = db_session.query(WishlistItem).filter(WishlistItem.user_id == user_id).all()
+    return [item.product_id for item in items]
+
+
+def get_user_wishlist(db_session, user_id, request=None):
+    from api.core.models import WishlistItem
+    query = db_session.query(WishlistItem).filter(WishlistItem.user_id == user_id).order_by(WishlistItem.created_at.desc())
+    if request is not None:
+        from api.core.utils import paginate_query
+        pagination = paginate_query(query, request)
+        return {
+            "wishlist": [item.product_id for item in pagination.items],
+            "pagination": {
+                "page": pagination.page,
+                "per_page": pagination.per_page,
+                "total_items": pagination.total,
+                "total_pages": pagination.pages,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev
+            }
+        }
+    items = query.all()
+    return {"wishlist": [item.product_id for item in items]}
+
+
+def add_to_wishlist(db_session, user_id, product_id):
+    from api.core.models import WishlistItem, Product
+    product = db_session.get(Product, product_id)
+    if not product:
+        raise ValueError("Product not found")
+
+    existing = db_session.query(WishlistItem).filter_by(user_id=user_id, product_id=product_id).first()
+    if not existing:
+        item = WishlistItem(user_id=user_id, product_id=product_id)
+        db_session.add(item)
+        db_session.commit()
+    return get_user_wishlist_ids(db_session, user_id)
+
+
+def remove_from_wishlist(db_session, user_id, product_id):
+    from api.core.models import WishlistItem
+    existing = db_session.query(WishlistItem).filter_by(user_id=user_id, product_id=product_id).first()
+    if existing:
+        db_session.delete(existing)
+        db_session.commit()
+    return get_user_wishlist_ids(db_session, user_id)
+
+
+def sync_user_wishlist(db_session, user_id, product_ids):
+    from api.core.models import WishlistItem, Product
+    if not isinstance(product_ids, list):
+        raise ValueError("product_ids must be a list")
+
+    for pid in product_ids:
+        try:
+            pid = int(pid)
+            prod = db_session.get(Product, pid)
+            if not prod:
+                continue
+            existing = db_session.query(WishlistItem).filter_by(user_id=user_id, product_id=pid).first()
+            if not existing:
+                item = WishlistItem(user_id=user_id, product_id=pid)
+                db_session.add(item)
+        except (ValueError, TypeError):
+            continue
+            
+    db_session.commit()
+    return get_user_wishlist_ids(db_session, user_id)

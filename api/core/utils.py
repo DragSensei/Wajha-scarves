@@ -5,7 +5,7 @@ from flask import url_for
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
 
-def paginate_query(query, request, default_per_page=12, max_per_page=50):
+def paginate_query(query, request, default_per_page=12, max_per_page=50, total=None):
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', default_per_page, type=int)
     
@@ -16,7 +16,12 @@ def paginate_query(query, request, default_per_page=12, max_per_page=50):
     if page < 1:
         page = 1
 
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    # ponytail: Point 10 — if total is pre-computed, pass count=False to avoid expensive subquery wrapping count
+    if total is not None:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False, count=False)
+        pagination.total = total
+    else:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     return pagination
 
 
@@ -48,20 +53,24 @@ def calculate_discounted_price(product):
     Calculates the discounted price of a product based on global sale settings.
     Ensures non-stacking of discounts, handles edge cases for invalid/negative percentages.
     """
+    # ponytail: use Setting.get_many to fetch all discount parameters in a single batch query/cache hit
     from api.core.models import Setting
-    discount_active = Setting.get_setting('discount_active') == 'true'
+    keys = ['discount_active', 'discount_percent', 'discount_categories', 'discount_product_ids']
+    settings = Setting.get_many(keys)
+
+    discount_active = settings.get('discount_active') == 'true'
     try:
-        discount_percent = float(Setting.get_setting('discount_percent') or 0)
+        discount_percent = float(settings.get('discount_percent') or 0)
     except ValueError:
         discount_percent = 0
 
     if discount_percent < 0 or discount_percent > 100:
         return product.price
 
-    cats_setting = Setting.get_setting('discount_categories')
+    cats_setting = settings.get('discount_categories')
     discount_categories = [c.strip() for c in cats_setting.split(',')] if cats_setting else []
 
-    ids_setting = Setting.get_setting('discount_product_ids')
+    ids_setting = settings.get('discount_product_ids')
     discount_product_ids = [i.strip() for i in ids_setting.split(',')] if ids_setting else []
 
     if not discount_active or discount_percent <= 0:

@@ -16,26 +16,27 @@ async function fetchCsrfToken() {
 }
 
 async function request(path, options = {}) {
+  const { silent = false, ...fetchOptions } = options;
   const url = `${BASE_URL}${path}`;
-  options.headers = {
+  fetchOptions.headers = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...fetchOptions.headers,
   };
-  options.credentials = 'include'; // support httponly cookie sessions
+  fetchOptions.credentials = 'include'; // support httponly cookie sessions
 
   // Attach CSRF token for mutations
-  const method = (options.method || 'GET').toUpperCase();
+  const method = (fetchOptions.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') {
     if (!csrfToken) {
       await fetchCsrfToken();
     }
     if (csrfToken) {
-      options.headers['X-CSRFToken'] = csrfToken;
+      fetchOptions.headers['X-CSRFToken'] = csrfToken;
     }
   }
 
   try {
-    const res = await fetch(url, options);
+    const res = await fetch(url, fetchOptions);
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.error || `Request failed with status ${res.status}`);
@@ -43,7 +44,9 @@ async function request(path, options = {}) {
     if (res.status === 204) return null;
     return await res.json();
   } catch (error) {
-    console.warn(`API Error on ${path}:`, error.message);
+    if (!silent) {
+      console.warn(`API Error on ${path}:`, error.message);
+    }
     throw error;
   }
 }
@@ -84,6 +87,87 @@ export const api = {
     }
   },
 
+  async createProduct(productData) {
+    return await request('/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  },
+
+  async updateProduct(id, productData) {
+    return await request(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(productData),
+    });
+  },
+
+  async deleteProduct(id) {
+    return await request(`/products/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async uploadProductImage(file, productId = null) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (productId) formData.append('product_id', productId);
+
+    if (!csrfToken) {
+      await fetchCsrfToken();
+    }
+    
+    const headers = {};
+    if (csrfToken) {
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    const res = await fetch(`${BASE_URL}/admin/images/upload`, {
+      method: 'POST',
+      body: formData,
+      headers,
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Upload failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async setPrimaryImage(productId, imageId) {
+    return await request(`/products/${productId}/images/${imageId}/primary`, {
+      method: 'PUT',
+    });
+  },
+
+  async getDbWishlist() {
+    return await request('/wishlist', { silent: true });
+  },
+
+  async addToDbWishlist(productId) {
+    return await request('/wishlist', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId }),
+      silent: true,
+    });
+  },
+
+  async removeFromDbWishlist(productId) {
+    return await request(`/wishlist/${productId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ product_id: productId }),
+      silent: true,
+    });
+  },
+
+  async syncDbWishlist(productIds) {
+    return await request('/wishlist/sync', {
+      method: 'POST',
+      body: JSON.stringify({ product_ids: productIds }),
+      silent: true,
+    });
+  },
+
   // Categories
   async getCategories() {
     try {
@@ -91,6 +175,26 @@ export const api = {
     } catch {
       return CATEGORIES;
     }
+  },
+
+  async createCategory(categoryData) {
+    return await request('/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData),
+    });
+  },
+
+  async updateCategory(id, categoryData) {
+    return await request(`/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
+    });
+  },
+
+  async deleteCategory(id) {
+    return await request(`/categories/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   // Checkout & Orders
@@ -164,9 +268,10 @@ export const api = {
     return data;
   },
 
-  async getMe() {
-    return await request('/auth/me');
+  async getMe(options = {}) {
+    return await request('/auth/me', options);
   },
+
 
   async updateProfile(profileData) {
     return await request('/auth/profile', {

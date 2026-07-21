@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { api } from '@/shared/lib/api';
+import { syncWishlist } from '@/shared/utils/wishlist';
 
 // Shared Components
 import Navbar from '@/shared/components/Navbar';
@@ -10,6 +11,7 @@ import AboutPage from '@/shared/components/AboutPage';
 // Customer Pages
 import Shop from '@/features/products/components/Shop';
 import ProductDetails from '@/features/products/components/ProductDetails';
+import WishlistPage from '@/features/products/components/WishlistPage';
 import CartPage from '@/features/cart/components/CartPage';
 import CheckoutPage from '@/features/cart/components/CheckoutPage';
 import LoginPage from '@/features/auth/components/LoginPage';
@@ -24,6 +26,7 @@ import AdminNavbar from '@/features/admin/components/AdminNavbar';
 // Admin Pages
 import Overview from '@/features/admin/components/Overview';
 import ProductsAdmin from '@/features/admin/components/ProductsAdmin';
+import ProductFormAdmin from '@/features/admin/components/ProductFormAdmin';
 import CategoriesAdmin from '@/features/admin/components/CategoriesAdmin';
 import UsersAdmin from '@/features/admin/components/UsersAdmin';
 import OrdersAdmin from '@/features/admin/components/OrdersAdmin';
@@ -67,6 +70,7 @@ function AppContent() {
         .then((data) => {
           if (data && data.user) {
             setUser(data.user);
+            syncWishlist();
           } else {
             setUser(null);
           }
@@ -212,6 +216,7 @@ function AppContent() {
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
+    syncWishlist();
   };
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -234,6 +239,9 @@ function AppContent() {
               <Routes>
                 <Route path="/admin" element={<Overview />} />
                 <Route path="/admin/products" element={<ProductsAdmin />} />
+                <Route path="/admin/products/new" element={<ProductFormAdmin mode="create" />} />
+                <Route path="/admin/products/:id/edit" element={<ProductFormAdmin mode="edit" />} />
+                <Route path="/admin/products/:id/delete" element={<ProductFormAdmin mode="delete" />} />
                 <Route path="/admin/categories" element={<CategoriesAdmin />} />
                 <Route path="/admin/users" element={<UsersAdmin />} />
                 <Route path="/admin/orders" element={<OrdersAdmin />} />
@@ -263,6 +271,7 @@ function AppContent() {
           <Route path="/" element={<Shop onAddToCart={handleAddToCart} />} />
           <Route path="/category/:categorySlug" element={<Shop onAddToCart={handleAddToCart} />} />
           <Route path="/product/:id" element={<ProductDetails onAddToCart={handleAddToCart} />} />
+          <Route path="/wishlist" element={<WishlistPage onAddToCart={handleAddToCart} />} />
           <Route path="/checkout" element={<CheckoutPage cartItems={cartItems} onClearCart={handleClearCart} user={user} />} />
           <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/register" element={<RegisterPage onLoginSuccess={handleLoginSuccess} />} />

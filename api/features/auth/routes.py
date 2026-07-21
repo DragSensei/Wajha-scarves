@@ -31,18 +31,21 @@ def register():
     role = data.get('role', 'student')
 
     # Security check: only allow public registration for standard customer/student accounts.
-    # Creating administrative or instructor accounts requires admin rights.
+    # Creating administrative or instructor accounts requires admin rights (or ADMIN_PASSWORD for initial bootstrap).
     if role in ('admin', 'instructor'):
         from api.core.decorators import get_token_from_request, decode_token, AuthError
-        try:
-            if User.query.first():
+        if not User.query.first():
+            if data.get('admin_secret') != current_app.config.get('ADMIN_PASSWORD'):
+                return jsonify({"error": "Admin secret key is required for initial admin bootstrap."}), 403
+        else:
+            try:
                 token = get_token_from_request()
                 payload = decode_token(token, verify_token_version=True)
                 role_claim = payload.get('role')
                 if role_claim != 'admin':
                     return jsonify({"error": "Admin access required to register admins/instructors."}), 403
-        except AuthError as e:
-            return jsonify({"error": f"Admin access required to register admins/instructors: {e.message}"}), e.status_code
+            except AuthError as e:
+                return jsonify({"error": f"Admin access required to register admins/instructors: {e.message}"}), e.status_code
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Validation failed", "details": {"email": "Email is already registered."}}), 400

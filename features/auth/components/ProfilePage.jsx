@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, ShieldAlert, Phone, Package, Calendar, MapPin, ChevronDown, ChevronUp, Lock, Check } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import Pagination from '@/shared/components/Pagination';
+import { formatPrice } from '@/shared/utils/currency';
 
 const PAGE_SIZE = 5;
 
@@ -284,7 +285,7 @@ export default function ProfilePage({ user, onUserUpdate }) {
 
                           <div className="flex items-center space-x-4">
                             <span className="text-xs font-mono font-bold text-primary">
-                              ${order.total_amount.toFixed(2)}
+                              {formatPrice(order.total_amount)}
                             </span>
                             {isExpanded ? (
                               <ChevronUp className="w-4 h-4 text-outline" />
@@ -311,7 +312,7 @@ export default function ProfilePage({ user, onUserUpdate }) {
                                         <span className="text-outline ml-2">x{item.quantity}</span>
                                       </div>
                                       <span className="font-bold text-on-background font-mono">
-                                        ${(item.price_at_order * item.quantity).toFixed(2)}
+                                        {formatPrice(item.price_at_order * item.quantity)}
                                       </span>
                                     </div>
                                   ))}
@@ -342,15 +343,15 @@ export default function ProfilePage({ user, onUserUpdate }) {
                             <div className="bg-white p-3 border border-surface-container/40 space-y-1.5 text-outline">
                               <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span>${(order.total_amount - 15.00 > 0 ? order.total_amount - 15.00 : order.total_amount).toFixed(2)}</span>
+                                <span>{formatPrice(order.total_amount - 15.00 > 0 ? order.total_amount - 15.00 : order.total_amount)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Shipping & handling</span>
-                                <span>$15.00</span>
+                                <span>{formatPrice(order.total_amount - 15.00 > 0 ? 15.00 : 0)}</span>
                               </div>
                               <div className="flex justify-between font-bold text-on-background text-sm pt-2 border-t border-surface-container/40">
                                 <span>Total Paid</span>
-                                <span className="text-primary font-mono">${order.total_amount.toFixed(2)}</span>
+                                <span className="text-primary font-mono">{formatPrice(order.total_amount)}</span>
                               </div>
                             </div>
                           </div>

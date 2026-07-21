@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, ArrowLeft } from 'lucide-react';
+import { Star, ArrowLeft, Heart } from 'lucide-react';
 import { api } from '@/shared/lib/api';
+import { formatPrice } from '@/shared/utils/currency';
+import { getWishlist, toggleWishlistId } from '@/shared/utils/wishlist';
+import ProductImageGallery from './ProductImageGallery';
 
 export default function ProductDetails({ onAddToCart }) {
   const { id } = useParams();
@@ -9,6 +12,8 @@ export default function ProductDetails({ onAddToCart }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('details');
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isHeartAnimating, setIsHeartAnimating] = useState(false);
 
   const [prevId, setPrevId] = useState(id);
   if (id !== prevId) {
@@ -20,13 +25,41 @@ export default function ProductDetails({ onAddToCart }) {
     api.getProduct(id).then(data => {
       setProduct(data);
       setLoading(false);
+      if (data) {
+        setIsWishlisted(getWishlist().includes(data.id));
+      }
     });
   }, [id]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-48">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 animate-pulse">
+        {/* Back navigation skeleton */}
+        <div className="h-4 bg-slate-200 rounded w-24 mb-12"></div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+          {/* Images column skeleton */}
+          <div>
+            <div className="bg-slate-200 aspect-4/5 w-full mb-6 rounded-sm"></div>
+            <div className="flex gap-4">
+              <div className="w-20 h-24 bg-slate-200 rounded-sm"></div>
+              <div className="w-20 h-24 bg-slate-200 rounded-sm"></div>
+              <div className="w-20 h-24 bg-slate-200 rounded-sm"></div>
+            </div>
+          </div>
+
+          {/* Info column skeleton */}
+          <div className="flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div className="h-8 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+              <div className="h-8 bg-slate-200 rounded w-1/4 mt-8"></div>
+              <div className="h-20 bg-slate-200 rounded w-full mt-6"></div>
+            </div>
+            <div className="h-12 bg-slate-200 rounded w-full"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -55,34 +88,35 @@ export default function ProductDetails({ onAddToCart }) {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-        {/* Product Images (Full bleed column) */}
-        <div>
-          <div className="bg-surface-container/40 aspect-4/5 overflow-hidden mb-6 border border-surface-container/60">
-            <img 
-              src={product.primary_image_url || 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=800'} 
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {/* Thumbnails */}
-          {product.images && product.images.length > 1 && (
-            <div className="flex gap-4">
-              {product.images.map(img => (
-                <div key={img.id} className="w-20 h-24 bg-surface-container/40 overflow-hidden border border-surface-container">
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Product Images */}
+        <ProductImageGallery 
+          images={product.images} 
+          primaryImageUrl={product.primary_image_url} 
+          productName={product.name} 
+        />
 
         {/* Product Information */}
         <div className="flex flex-col justify-between">
           <div>
-            {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-serif tracking-wide text-on-background font-medium mb-3">
-              {product.name}
-            </h1>
+            {/* Title & Wishlist Button */}
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <h1 className="text-3xl md:text-4xl font-serif tracking-wide text-on-background font-medium">
+                {product.name}
+              </h1>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsHeartAnimating(true);
+                  setTimeout(() => setIsHeartAnimating(false), 450);
+                  const updated = toggleWishlistId(product.id);
+                  setIsWishlisted(updated.includes(product.id));
+                }}
+                className="p-3.5 rounded-full bg-surface-container/30 hover:bg-surface-container/60 transition-colors cursor-pointer border border-surface-container/60 shrink-0"
+                aria-label="Toggle Wishlist"
+              >
+                <Heart className={`w-5 h-5 transition-all duration-300 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-outline hover:text-red-400'} ${isHeartAnimating ? 'animate-heart-pop' : ''}`} />
+              </button>
+            </div>
 
             {/* Category */}
             <div className="text-xs font-sans tracking-widest text-outline uppercase mb-6">
@@ -106,10 +140,10 @@ export default function ProductDetails({ onAddToCart }) {
               {product.discount_active ? (
                 <div className="flex items-center space-x-4">
                   <span className="text-base font-sans line-through text-outline">
-                    ${product.original_price.toFixed(2)}
+                    {formatPrice(product.original_price)}
                   </span>
                   <span className="text-2xl font-sans font-bold text-primary">
-                    ${product.discounted_price.toFixed(2)}
+                    {formatPrice(product.discounted_price)}
                   </span>
                   <span className="bg-primary-container/20 text-primary text-[10px] font-sans tracking-wider uppercase px-3 py-1 font-bold">
                     Save 15%
@@ -117,7 +151,7 @@ export default function ProductDetails({ onAddToCart }) {
                 </div>
               ) : (
                 <span className="text-2xl font-sans font-bold text-on-background">
-                  ${product.original_price.toFixed(2)}
+                  {formatPrice(product.original_price)}
                 </span>
               )}
             </div>

@@ -18,6 +18,11 @@ def seed():
             {'name': 'Scarf & Bandana Sets', 'slug': 'scarf-bandana-sets', 'description': 'Matching scarf and bandana sets for effortless styling.'},
             {'name': 'Solid Colors & Pastels', 'slug': 'solid-colors-pastels', 'description': 'Vibrant and subtle solid tone scarves for everyday wear.'},
             {'name': 'Luxury Essentials', 'slug': 'luxury-essentials', 'description': 'Signature luxury scarves for special occasions and elevated style.'},
+            {
+                'name': 'Your Birthday Scarf',
+                'slug': 'your-birthday-scarf',
+                'description': 'Every month has a story, and every story has a flower that blooms just for you.\n\nIntroducing our unique, customized scarf line where every month comes alive with its own signature blossom. Just like nature, we believe every woman blooms in her own beautiful time.\n\nWhether it’s your birth month flower or a special memory you want to carry with you, these scarves are designed to be uniquely yours.\n\n• The Perfect Self-Love Treat: Wear your own month and embrace your inner bloom.\n• The Ultimate Gift: Celebrate your bestie, your mom, or a loved one with a gift that’s made just for them.'
+            },
         ]
         
         cats_by_slug = {}
@@ -32,6 +37,8 @@ def seed():
 
         def get_target_cat(p_name):
             low = p_name.lower()
+            if 'birthday' in low or 'birth' in low or 'flower' in low or 'bloom' in low or 'june' in low or 'may' in low:
+                return cats_by_slug['your-birthday-scarf']
             if 'set' in low or 'bandana' in low:
                 return cats_by_slug['scarf-bandana-sets']
             if any(k in low for k in ['yellow', 'blue', 'green', 'berry', 'mauve', 'mist', 'mint', 'teal', 'crimson']):

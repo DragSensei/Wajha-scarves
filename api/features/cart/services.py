@@ -1,26 +1,40 @@
 from api.core.db import db
 from api.core.models import CartItem, Product, Order
+from sqlalchemy.orm import joinedload, selectinload
 
 def get_cart_items(user_id):
     """
     Returns all cart items for a given user.
     """
-    return CartItem.query.filter_by(user_id=user_id).all()
+    # ponytail: Point 12 — selectinload avoids row fan-out for 1-to-many images relationship
+    return CartItem.query.filter_by(user_id=user_id).options(
+        joinedload(CartItem.product).joinedload(Product.category_ref),
+        joinedload(CartItem.product).selectinload(Product.images)
+    ).all()
 
 def add_item_to_cart(user_id, product_id, quantity=1):
     """
     Adds a product to the user's cart, or increments quantity if already exists.
     """
-    product = db.session.get(Product, product_id)
+    product = Product.query.options(
+        joinedload(Product.category_ref),
+        selectinload(Product.images)
+    ).filter(Product.id == product_id).first()
+    
     if not product:
         raise ValueError("Product not found")
 
-    cart_item = CartItem.query.filter_by(user_id=user_id, product_id=product_id).first()
+    cart_item = CartItem.query.options(
+        joinedload(CartItem.product).joinedload(Product.category_ref),
+        joinedload(CartItem.product).selectinload(Product.images)
+    ).filter_by(user_id=user_id, product_id=product_id).first()
+
     if cart_item:
         cart_item.quantity += quantity
     else:
         cart_item = CartItem(user_id=user_id, product_id=product_id, quantity=quantity)
         db.session.add(cart_item)
+        cart_item.product = product
 
     db.session.commit()
     return cart_item
@@ -30,7 +44,11 @@ def update_cart_item_quantity(user_id, product_id, quantity):
     Updates the quantity of a product in the user's cart.
     If quantity <= 0, the item is removed.
     """
-    cart_item = CartItem.query.filter_by(user_id=user_id, product_id=product_id).first()
+    cart_item = CartItem.query.options(
+        joinedload(CartItem.product).joinedload(Product.category_ref),
+        joinedload(CartItem.product).selectinload(Product.images)
+    ).filter_by(user_id=user_id, product_id=product_id).first()
+
     if not cart_item:
         raise ValueError("Cart item not found")
 
