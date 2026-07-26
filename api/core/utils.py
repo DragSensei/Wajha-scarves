@@ -67,14 +67,18 @@ def calculate_discounted_price(product):
     if discount_percent < 0 or discount_percent > 100:
         return product.price
 
-    cats_setting = settings.get('discount_categories')
-    discount_categories = [c.strip() for c in cats_setting.split(',')] if cats_setting else []
+    cats_setting = settings.get('discount_categories') or ''
+    discount_categories = [c.strip() for c in cats_setting.split(',') if c.strip()]
 
-    ids_setting = settings.get('discount_product_ids')
-    discount_product_ids = [i.strip() for i in ids_setting.split(',')] if ids_setting else []
+    ids_setting = settings.get('discount_product_ids') or ''
+    discount_product_ids = [i.strip() for i in ids_setting.split(',') if i.strip()]
 
     if not discount_active or discount_percent <= 0:
         return product.price
+
+    # ponytail: empty target filters mean sale applies globally to all items
+    if not discount_categories and not discount_product_ids:
+        return product.price * (1.0 - (discount_percent / 100.0))
 
     prod_category = product.category_ref.slug if product.category_ref else product.category
     is_category_match = prod_category in discount_categories

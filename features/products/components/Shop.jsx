@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { X, Heart } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
-import { getWishlist, toggleWishlistId } from '@/shared/utils/wishlist';
+import { getWishlist, toggleWishlistId, hasWishlistId } from '@/shared/utils/wishlist';
 
 export default function Shop({ onAddToCart }) {
   const { categorySlug } = useParams();
@@ -32,7 +32,7 @@ export default function Shop({ onAddToCart }) {
     setWishlist(updated);
   };
 
-  const isWishlisted = (id) => Array.isArray(wishlist) && wishlist.includes(id);
+  const isWishlisted = (id) => hasWishlistId(wishlist, id);
 
   const [prevCategoryKey, setPrevCategoryKey] = useState(`${selectedCategory}:${searchQuery}`);
   const currentCategoryKey = `${selectedCategory}:${searchQuery}`;
@@ -56,7 +56,7 @@ export default function Shop({ onAddToCart }) {
   let heroTitle = activeCategory ? activeCategory.name : "The Luminous Collection";
   let heroDescription = activeCategory && activeCategory.description 
     ? activeCategory.description 
-    : "Inspired by the spiritual concept of 'An-Nur' (The Light). Our editorial collection wraps you in serene luxury, featuring organic silks and lightweight double-loop chiffons.";
+    : "Inspired by the spiritual concept of 'An-Nur' (The Light). Our editorial collection wraps you in serene luxury, featuring premium lightweight fabrics and elegant drapes.";
 
   if (searchQuery) {
     heroTitle = `Search: "${searchQuery}"`;

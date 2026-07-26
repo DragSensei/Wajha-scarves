@@ -8,18 +8,52 @@ export function getWishlist() {
     while (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.wishlist) {
       parsed = parsed.wishlist;
     }
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    
+    // Normalize IDs to numbers if numeric, remove invalid/falsy
+    const filtered = parsed
+      .map(id => {
+        if (id === null || id === undefined || id === '') return null;
+        const num = Number(id);
+        return isNaN(num) ? String(id) : num;
+      })
+      .filter(id => id !== null);
+
+    // Deduplicate preserving numbers
+    const unique = [];
+    const seen = new Set();
+    for (const item of filtered) {
+      const key = String(item);
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(item);
+      }
+    }
+
+    if (unique.length !== parsed.length || JSON.stringify(unique) !== saved) {
+      localStorage.setItem('diya_wishlist', JSON.stringify(unique));
+    }
+    return unique;
   } catch {
     return [];
   }
 }
 
+export function hasWishlistId(list, id) {
+  if (!Array.isArray(list) || id === null || id === undefined) return false;
+  const targetStr = String(id);
+  return list.some(item => String(item) === targetStr);
+}
+
 export function toggleWishlistId(id) {
+  if (id === null || id === undefined) return getWishlist();
   const current = getWishlist();
-  const isAdded = current.includes(id);
+  const targetStr = String(id);
+  const isAdded = current.some(item => String(item) === targetStr);
+  
   const updated = isAdded 
-    ? current.filter(item => item !== id) 
-    : [...current, id];
+    ? current.filter(item => String(item) !== targetStr) 
+    : [...current, typeof id === 'number' ? id : (isNaN(Number(id)) ? id : Number(id))];
   
   localStorage.setItem('diya_wishlist', JSON.stringify(updated));
   window.dispatchEvent(new Event('wishlist-updated'));
@@ -36,7 +70,7 @@ export function toggleWishlistId(id) {
         }
       }
     } catch {
-      // ponytail: silent; only warn on unexpected errors, not 401s
+      // ponytail: silent
     }
   })();
 
@@ -51,10 +85,11 @@ export async function syncWishlist() {
       const res = await api.syncDbWishlist(local);
       const raw = res?.wishlist;
       const list = Array.isArray(raw) ? raw : (raw?.wishlist || []);
-      localStorage.setItem('diya_wishlist', JSON.stringify(list));
+      const normalized = list.map(i => isNaN(Number(i)) ? i : Number(i));
+      localStorage.setItem('diya_wishlist', JSON.stringify(normalized));
       window.dispatchEvent(new Event('wishlist-updated'));
     }
   } catch {
-    // ponytail: silent; only warn on unexpected errors
+    // ponytail: silent
   }
 }

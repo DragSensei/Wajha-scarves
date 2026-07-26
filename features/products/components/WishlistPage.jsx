@@ -4,7 +4,7 @@ import { Heart, Trash2, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
 import Pagination from '@/shared/components/Pagination';
-import { getWishlist, toggleWishlistId } from '@/shared/utils/wishlist';
+import { getWishlist, toggleWishlistId, hasWishlistId } from '@/shared/utils/wishlist';
 
 const PAGE_SIZE = 12;
 
@@ -33,7 +33,22 @@ export default function WishlistPage({ onAddToCart }) {
     return () => { isMounted = false; };
   }, []);
 
-  const wishedProducts = products.filter(p => wishlistIds.includes(p.id));
+  // Prune stale IDs that no longer match any valid product
+  useEffect(() => {
+    if (!loading && products.length > 0) {
+      const current = getWishlist();
+      if (current.length > 0) {
+        const validIds = products.map(p => String(p.id));
+        const cleaned = current.filter(id => validIds.includes(String(id)));
+        if (cleaned.length !== current.length) {
+          localStorage.setItem('diya_wishlist', JSON.stringify(cleaned));
+          window.dispatchEvent(new Event('wishlist-updated'));
+        }
+      }
+    }
+  }, [loading, products]);
+
+  const wishedProducts = products.filter(p => hasWishlistId(wishlistIds, p.id));
   const totalPages = Math.ceil(wishedProducts.length / PAGE_SIZE) || 1;
   const paginatedWishedProducts = wishedProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 

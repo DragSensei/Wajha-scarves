@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Star, ArrowLeft, Heart } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
-import { getWishlist, toggleWishlistId } from '@/shared/utils/wishlist';
+import { getWishlist, toggleWishlistId, hasWishlistId } from '@/shared/utils/wishlist';
 import ProductImageGallery from './ProductImageGallery';
 
 export default function ProductDetails({ onAddToCart }) {
@@ -26,7 +26,7 @@ export default function ProductDetails({ onAddToCart }) {
       setProduct(data);
       setLoading(false);
       if (data) {
-        setIsWishlisted(getWishlist().includes(data.id));
+        setIsWishlisted(hasWishlistId(getWishlist(), data.id));
       }
     });
   }, [id]);
@@ -109,7 +109,7 @@ export default function ProductDetails({ onAddToCart }) {
                   setIsHeartAnimating(true);
                   setTimeout(() => setIsHeartAnimating(false), 450);
                   const updated = toggleWishlistId(product.id);
-                  setIsWishlisted(updated.includes(product.id));
+                  setIsWishlisted(hasWishlistId(updated, product.id));
                 }}
                 className="p-3.5 rounded-full bg-surface-container/30 hover:bg-surface-container/60 transition-colors cursor-pointer border border-surface-container/60 shrink-0"
                 aria-label="Toggle Wishlist"

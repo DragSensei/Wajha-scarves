@@ -56,14 +56,13 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
     <>
       {/* Top Notice Banner */}
       <div className="bg-primary text-white text-[10px] md:text-xs font-sans tracking-widest text-center py-2 px-4 uppercase">
-        Luminous Elegance — 15% off on select silk collections
+        Luminous Elegance — 15% off on select collections
       </div>
-
-      <header className="sticky top-0 z-40 bg-background border-b border-surface-container/60 h-20 flex items-center justify-between px-6 md:px-12 relative">
+      <header className="sticky top-0 z-40 bg-background border-b border-surface-container/60 h-20 sm:h-24 md:h-28 flex items-center justify-between px-4 sm:px-6 md:px-12 relative">
         {/* Left Side: Clickable Menu Button */}
         <button 
           onClick={() => setIsMenuOpen(true)}
-          className="text-on-background hover:text-primary transition-colors flex items-center gap-2 group cursor-pointer focus:outline-hidden"
+          className="text-on-background hover:text-primary transition-colors flex items-center gap-2 group cursor-pointer focus:outline-hidden z-10"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
@@ -71,18 +70,18 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
         </button>
 
         {/* Center: Brand Logo & Emblem */}
-        <div className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
           <Link to="/" className="flex flex-col items-center group">
             <img 
               src="/diya-logo.png" 
               alt="Diya Logo" 
-              className="h-8 md:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+              className="h-14 sm:h-16 md:h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
             />
           </Link>
         </div>
 
         {/* Right Side: Utility Icons */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-3 sm:space-x-5 md:space-x-6 z-10">
           {/* Search Trigger */}
           <button 
             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -92,50 +91,52 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             <Search className="w-5 h-5" />
           </button>
 
-          {/* User Account / Profile */}
-          {user ? (
-            <div className="relative group">
-              <button 
-                className="flex items-center space-x-1 text-on-background hover:text-primary transition-transform duration-200 hover:scale-110 cursor-pointer focus:outline-hidden"
-                aria-label="Account Menu"
-              >
-                <User className="w-5 h-5" />
-                <span className="hidden md:inline text-xs font-sans tracking-widest uppercase">{user.full_name.split(' ')[0]}</span>
-              </button>
-              {/* Dropdown Menu */}
-              <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50">
-                <div className="bg-white border border-surface-container shadow-lg">
-                  <Link to="/profile" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-on-background">
-                    My Profile
-                  </Link>
-                  {user.role === 'admin' && (
-                    <Link to="/admin" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-on-background border-t border-surface-container">
-                      Admin Dashboard
+          {/* User Account / Profile (Hidden on small screens, accessible in drawer) */}
+          <div className="hidden sm:block">
+            {user ? (
+              <div className="relative group">
+                <button 
+                  className="flex items-center space-x-1 text-on-background hover:text-primary transition-transform duration-200 hover:scale-110 cursor-pointer focus:outline-hidden"
+                  aria-label="Account Menu"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="hidden md:inline text-xs font-sans tracking-widest uppercase">{user.full_name.split(' ')[0]}</span>
+                </button>
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50">
+                  <div className="bg-white border border-surface-container shadow-lg">
+                    <Link to="/profile" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-on-background">
+                      My Profile
                     </Link>
-                  )}
-                  <button 
-                    onClick={onLogout}
-                    className="w-full text-left block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-red-600 border-t border-surface-container cursor-pointer"
-                  >
-                    Logout
-                  </button>
+                    {user.role === 'admin' && (
+                      <Link to="/admin" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-on-background border-t border-surface-container">
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button 
+                      onClick={onLogout}
+                      className="w-full text-left block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-red-600 border-t border-surface-container cursor-pointer"
+                    >
+                      Logout
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <Link 
-              to="/login" 
-              className="text-on-background hover:text-primary transition-transform duration-200 hover:scale-110"
-              aria-label="Sign In"
-            >
-              <User className="w-5 h-5" />
-            </Link>
-          )}
+            ) : (
+              <Link 
+                to="/login" 
+                className="text-on-background hover:text-primary transition-transform duration-200 hover:scale-110 flex items-center"
+                aria-label="Sign In"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+            )}
+          </div>
 
-          {/* Wishlist Trigger */}
+          {/* Wishlist Trigger (Hidden on small screens, accessible in drawer) */}
           <Link 
             to="/wishlist" 
-            className="relative text-on-background hover:text-primary transition-transform duration-200 hover:scale-110 cursor-pointer focus:outline-hidden"
+            className="hidden sm:block relative text-on-background hover:text-primary transition-transform duration-200 hover:scale-110 cursor-pointer focus:outline-hidden"
             aria-label="Wishlist"
           >
             <Heart className={`w-5 h-5 transition-colors ${wishlistCount > 0 ? 'text-red-500 fill-red-500/20' : ''} ${isWishlistBouncing ? 'animate-heart-pop text-red-500' : ''}`} />
@@ -162,7 +163,6 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
         </div>
 
         {/* Floating Search Bar (Smooth slide-down / fade-in animation) */}
-        {/* ponytail: nested inside sticky header so it moves/stays with the navbar */}
         <div 
           className={`absolute top-full left-0 w-full bg-white border-b border-surface-container z-30 p-4 shadow-md transition-all duration-300 ease-in-out ${
             isSearchOpen 
@@ -258,17 +258,19 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
               <Link 
                 to="/profile" 
                 onClick={() => setIsMenuOpen(false)}
-                className="text-xs font-sans tracking-widest uppercase hover:text-primary transition-colors"
+                className="text-xs font-sans tracking-widest uppercase hover:text-primary transition-colors flex items-center gap-2"
               >
-                My Profile
+                <User className="w-4 h-4" />
+                <span>My Profile</span>
               </Link>
               {user.role === 'admin' && (
                 <Link 
                   to="/admin" 
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-xs font-sans tracking-widest uppercase hover:text-primary transition-colors"
+                  className="text-xs font-sans tracking-widest uppercase hover:text-primary transition-colors flex items-center gap-2"
                 >
-                  Admin Dashboard
+                  <User className="w-4 h-4" />
+                  <span>Admin Dashboard</span>
                 </Link>
               )}
               <button 
@@ -285,9 +287,10 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             <Link 
               to="/login" 
               onClick={() => setIsMenuOpen(false)}
-              className="block text-xs font-sans tracking-widest uppercase hover:text-primary transition-colors"
+              className="text-xs font-sans tracking-widest uppercase text-on-background hover:text-primary transition-colors flex items-center gap-2"
             >
-              Sign In / Register
+              <User className="w-4 h-4" />
+              <span>Sign In / Register</span>
             </Link>
           )}
         </div>
