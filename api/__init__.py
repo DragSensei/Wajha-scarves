@@ -17,7 +17,10 @@ class Config:
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'default_admin_password_change_me')
     
     # Neon database string in prod, SQLite locally
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app.db'))
+    _db_url = os.environ.get('DATABASE_URL')
+    if _db_url and _db_url.startswith('postgres://'):
+        _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = _db_url or 'sqlite:///' + os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Secure cookie attributes to prevent hijacking
@@ -59,7 +62,13 @@ def create_app(config_class=Config):
             raise ValueError("Missing or invalid JWT_SECRET in environment variables")
 
     # Initialize CORS with locked origins
-    allowed_origins = os.environ.get('CORS_ORIGIN', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000').split(',')
+    cors_env = os.environ.get('CORS_ORIGIN')
+    if cors_env:
+        allowed_origins = [o.strip() for o in cors_env.split(',') if o.strip()]
+    elif os.environ.get('VERCEL'):
+        allowed_origins = "*"
+    else:
+        allowed_origins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000']
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
     # Initialize extensions
