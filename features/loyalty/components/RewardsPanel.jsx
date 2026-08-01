@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Crown, Award, Gift, Copy, Check, ArrowRight, RefreshCw, UserCheck, Star } from 'lucide-react';
 import { api } from '@/shared/lib/api';
-import { formatPrice } from '@/shared/utils/currency';
+import { formatPrice, formatRawPrice } from '@/shared/utils/currency';
 
 // Alternating colour palettes for tier cards (cycles by index)
 const TIER_PALETTES = [
@@ -126,12 +126,12 @@ export default function RewardsPanel({ user }) {
                 <Star className={`w-5 h-5 mx-auto ${palette.icon}`} />
                 <div className={`text-xs font-bold uppercase tracking-wider ${palette.label}`}>{tier.name}</div>
                 <div className="text-sm font-serif font-semibold text-on-background">
-                  {tier.spend_threshold === 0 ? 'Entry Level' : `${formatPrice(tier.spend_threshold)} Spend`}
+                  {tier.spend_threshold === 0 ? 'Entry Level' : `${formatRawPrice(tier.spend_threshold)} Spend`}
                 </div>
                 <p className="text-[11px] font-sans text-outline">
                   {tier.spend_threshold === 0
                     ? 'Earn points on every purchase & birthday rewards.'
-                    : `Unlock exclusive privileges at ${formatPrice(tier.spend_threshold)} lifetime spend.`}
+                    : `Unlock exclusive privileges at ${formatRawPrice(tier.spend_threshold)} lifetime spend.`}
                 </p>
               </div>
             );
@@ -188,7 +188,7 @@ export default function RewardsPanel({ user }) {
                 )}
                 <div className={`text-[10px] font-bold uppercase tracking-wider ${palette.label}`}>{tier.name}</div>
                 <div className="text-[11px] font-sans text-outline mt-0.5">
-                  {tier.spend_threshold === 0 ? 'From 0' : `${formatPrice(tier.spend_threshold)}+`}
+                  {tier.spend_threshold === 0 ? 'From 0' : `${formatRawPrice(tier.spend_threshold)}+`}
                 </div>
               </div>
             );
