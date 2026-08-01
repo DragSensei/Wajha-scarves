@@ -415,6 +415,15 @@ export const api = {
   },
 
   // Loyalty & Rewards
+  async getLoyaltyTiers() {
+    try {
+      const data = await request('/loyalty/tiers');
+      return data.tiers || [];
+    } catch {
+      return [{ id: 1, name: 'Bronze', spend_threshold: 0, sort_order: 1 }];
+    }
+  },
+
   async getLoyaltyStatus() {
     return await request('/loyalty/status');
   },

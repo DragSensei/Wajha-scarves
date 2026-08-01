@@ -1,16 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, Award, Gift, Copy, Check, ArrowRight, RefreshCw, UserCheck } from 'lucide-react';
+import { Crown, Award, Gift, Copy, Check, ArrowRight, RefreshCw, UserCheck, Star } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
+
+// Alternating colour palettes for tier cards (cycles by index)
+const TIER_PALETTES = [
+  { border: 'border-amber-300', bg: 'bg-amber-50', label: 'text-amber-800', icon: 'text-amber-600' },
+  { border: 'border-primary/40', bg: 'bg-primary/5', label: 'text-primary', icon: 'text-primary' },
+  { border: 'border-amber-500', bg: 'bg-amber-50', label: 'text-amber-700', icon: 'text-amber-500' },
+  { border: 'border-stone-400', bg: 'bg-stone-50', label: 'text-stone-700', icon: 'text-stone-500' },
+];
 
 export default function RewardsPanel({ user }) {
   const [status, setStatus] = useState(null);
   const [history, setHistory] = useState([]);
+  const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(() => Boolean(user));
   const [converting, setConverting] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Fetch tiers for everyone (public endpoint)
+  useEffect(() => {
+    api.getLoyaltyTiers().then(setTiers);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -99,23 +113,29 @@ export default function RewardsPanel({ user }) {
           </div>
         </div>
 
-        {/* Tier Overview Grid */}
+        {/* Tier Overview Grid — dynamic, alternating colours */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white border border-surface-container p-6 text-center space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-amber-800">Bronze Tier</div>
-            <div className="text-sm font-serif font-semibold text-on-background">Entry Level</div>
-            <p className="text-[11px] font-sans text-outline">Earn standard points on purchases & birthday rewards.</p>
-          </div>
-          <div className="bg-white border border-primary/40 p-6 text-center space-y-2 shadow-xs">
-            <div className="text-xs font-bold uppercase tracking-wider text-primary">Silver Tier</div>
-            <div className="text-sm font-serif font-semibold text-on-background">2,000 EGP Spend</div>
-            <p className="text-[11px] font-sans text-outline">1.5x bonus points multiplier & priority drop access.</p>
-          </div>
-          <div className="bg-white border border-amber-400 p-6 text-center space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-amber-600">Gold & Platinum</div>
-            <div className="text-sm font-serif font-semibold text-on-background">5,000+ EGP Spend</div>
-            <p className="text-[11px] font-sans text-outline">Exclusive high-value vouchers & private concierge drops.</p>
-          </div>
+          {(tiers.length > 0 ? tiers : [
+            { id: 'b', name: 'Bronze', spend_threshold: 0 },
+            { id: 's', name: 'Silver', spend_threshold: 2000 },
+            { id: 'g', name: 'Gold & Platinum', spend_threshold: 5000 },
+          ]).map((tier, i) => {
+            const palette = TIER_PALETTES[i % TIER_PALETTES.length];
+            return (
+              <div key={tier.id} className={`border ${palette.border} ${palette.bg} p-6 text-center space-y-2`}>
+                <Star className={`w-5 h-5 mx-auto ${palette.icon}`} />
+                <div className={`text-xs font-bold uppercase tracking-wider ${palette.label}`}>{tier.name}</div>
+                <div className="text-sm font-serif font-semibold text-on-background">
+                  {tier.spend_threshold === 0 ? 'Entry Level' : `${formatPrice(tier.spend_threshold)} Spend`}
+                </div>
+                <p className="text-[11px] font-sans text-outline">
+                  {tier.spend_threshold === 0
+                    ? 'Earn points on every purchase & birthday rewards.'
+                    : `Unlock exclusive privileges at ${formatPrice(tier.spend_threshold)} lifetime spend.`}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -147,6 +167,34 @@ export default function RewardsPanel({ user }) {
           <div className="text-[10px] font-sans text-outline mt-0.5">pts</div>
         </div>
       </div>
+
+      {/* Tier Progression — dynamic, alternating colours */}
+      {tiers.length > 0 && (
+        <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${tiers.length}, minmax(0, 1fr))` }}>
+          {tiers.map((tier, i) => {
+            const palette = TIER_PALETTES[i % TIER_PALETTES.length];
+            const isCurrentTier = (status?.membership_tier || 'Bronze').toLowerCase() === tier.name.toLowerCase();
+            return (
+              <div
+                key={tier.id}
+                className={`border ${palette.border} ${palette.bg} px-4 py-3 text-center relative ${
+                  isCurrentTier ? 'ring-2 ring-primary ring-offset-1' : ''
+                }`}
+              >
+                {isCurrentTier && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-widest bg-primary text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                    You Are Here
+                  </span>
+                )}
+                <div className={`text-[10px] font-bold uppercase tracking-wider ${palette.label}`}>{tier.name}</div>
+                <div className="text-[11px] font-sans text-outline mt-0.5">
+                  {tier.spend_threshold === 0 ? 'From 0' : `${formatPrice(tier.spend_threshold)}+`}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {msg.text && (
         <div className={`p-4 text-xs font-sans border ${msg.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>

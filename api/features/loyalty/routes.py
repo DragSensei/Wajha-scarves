@@ -3,6 +3,7 @@ from flask import jsonify, request
 from api.features.loyalty import loyalty_bp
 from api.core.decorators import require_auth
 from api.core.extensions import limiter
+from api.core.models import MembershipTier
 from api.features.loyalty.services import (
     get_user_loyalty_status,
     get_user_points_history,
@@ -20,6 +21,14 @@ def verify_cron_secret():
     if auth_header and (auth_header == f"Bearer {cron_secret}" or auth_header == cron_secret):
         return True
     return False
+
+
+@loyalty_bp.route('/tiers', methods=['GET'])
+@limiter.limit("200 per minute")
+def loyalty_tiers_route():
+    """Public endpoint — returns all membership tiers ordered by spend threshold."""
+    tiers = MembershipTier.query.order_by(MembershipTier.spend_threshold.asc()).all()
+    return jsonify({"tiers": [t.to_dict() for t in tiers]}), 200
 
 
 @loyalty_bp.route('/status', methods=['GET'])
