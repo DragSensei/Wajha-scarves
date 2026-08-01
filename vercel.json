@@ -28,7 +28,7 @@
   "crons": [
     {
       "path": "/api/loyalty/cron/reconcile",
-      "schedule": "0 * * * *"
+      "schedule": "0 1 * * *"
     },
     {
       "path": "/api/loyalty/cron/birthdays",
