@@ -9,8 +9,8 @@ import logging
 from werkzeug.utils import secure_filename
 from api.core.models import Setting, ProductImage
 
-# Protect against decompression bomb DoS attacks (default is ~89M pixels)
-Image.MAX_IMAGE_PIXELS = 1920 * 1080 * 2
+# Protect against decompression bomb DoS attacks (max 35M pixels)
+Image.MAX_IMAGE_PIXELS = 35000000
 logger = logging.getLogger(__name__)
 
 from api.core.utils import calculate_discounted_price
@@ -33,11 +33,12 @@ def process_and_save_image(image_file, upload_dir):
     unique_filename = f"{uuid.uuid4().hex}{ext}"
     vercel_token = os.environ.get('BLOB_READ_WRITE_TOKEN')
 
+    image_file.seek(0)
     with Image.open(image_file) as img_obj:
-        # ponytail: prevent decompression bomb DoS attacks by checking dimensions (max 25MP)
+        # ponytail: prevent decompression bomb DoS attacks by checking dimensions (max 35MP)
         w, h = img_obj.size
-        if w * h > 25000000:
-            raise ValueError("Image dimensions exceed the safety limit of 25 megapixels.")
+        if w * h > 35000000:
+            raise ValueError("Image dimensions exceed the safety limit of 35 megapixels.")
 
         if img_obj.mode in ("RGBA", "P"):
             img_obj = img_obj.convert("RGB")

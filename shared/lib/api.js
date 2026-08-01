@@ -1,4 +1,6 @@
-import { PRODUCTS, CATEGORIES, SETTINGS } from '@/shared/utils/mockData';
+import { formatHumanErrorMessage, notify } from '@/shared/utils/notifications';
+
+// API Client
 
 const BASE_URL = '/api';
 let csrfToken = null;
@@ -24,9 +26,9 @@ async function request(path, options = {}) {
   };
   fetchOptions.credentials = 'include'; // support httponly cookie sessions
 
-  // Attach CSRF token for mutations
+  // Attach CSRF token to state-mutating requests (POST, PUT, DELETE)
   const method = (fetchOptions.method || 'GET').toUpperCase();
-  if (method !== 'GET' && method !== 'HEAD') {
+  if (['POST', 'PUT', 'DELETE'].includes(method)) {
     if (!csrfToken) {
       await fetchCsrfToken();
     }
@@ -39,13 +41,15 @@ async function request(path, options = {}) {
     const res = await fetch(url, fetchOptions);
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Request failed with status ${res.status}`);
+      const humanMsg = formatHumanErrorMessage(errData, res.status);
+      throw new Error(humanMsg);
     }
     if (res.status === 204) return null;
     return await res.json();
   } catch (error) {
     if (!silent) {
       console.warn(`API Error on ${path}:`, error.message);
+      notify.error(error.message);
     }
     throw error;
   }
@@ -67,15 +71,7 @@ export const api = {
       const data = await request(`/products${queryString}`);
       return data.products;
     } catch {
-      let list = PRODUCTS;
-      if (categorySlug) {
-        list = list.filter(p => p.category_slug === categorySlug);
-      }
-      if (search) {
-        const lower = search.toLowerCase();
-        list = list.filter(p => p.name.toLowerCase().includes(lower) || (p.description && p.description.toLowerCase().includes(lower)));
-      }
-      return list;
+      return [];
     }
   },
 
@@ -83,7 +79,7 @@ export const api = {
     try {
       return await request(`/products/${id}`);
     } catch {
-      return PRODUCTS.find(p => p.id === Number(id)) || null;
+      return null;
     }
   },
 
@@ -141,11 +137,11 @@ export const api = {
   },
 
   async getDbWishlist() {
-    return await request('/wishlist', { silent: true });
+    return await request('/products/wishlist', { silent: true });
   },
 
   async addToDbWishlist(productId) {
-    return await request('/wishlist', {
+    return await request('/products/wishlist', {
       method: 'POST',
       body: JSON.stringify({ product_id: productId }),
       silent: true,
@@ -153,7 +149,7 @@ export const api = {
   },
 
   async removeFromDbWishlist(productId) {
-    return await request(`/wishlist/${productId}`, {
+    return await request(`/products/wishlist/${productId}`, {
       method: 'DELETE',
       body: JSON.stringify({ product_id: productId }),
       silent: true,
@@ -161,7 +157,7 @@ export const api = {
   },
 
   async syncDbWishlist(productIds) {
-    return await request('/wishlist/sync', {
+    return await request('/products/wishlist/sync', {
       method: 'POST',
       body: JSON.stringify({ product_ids: productIds }),
       silent: true,
@@ -173,7 +169,7 @@ export const api = {
     try {
       return await request('/categories');
     } catch {
-      return CATEGORIES;
+      return [];
     }
   },
 
@@ -285,7 +281,7 @@ export const api = {
     try {
       return await request('/settings');
     } catch {
-      return SETTINGS;
+      return {};
     }
   },
 
@@ -301,6 +297,11 @@ export const api = {
     return await request('/orders');
   },
 
+  async getAdminOrder(orderId) {
+    const data = await request(`/orders/${orderId}`);
+    return data.order || data;
+  },
+
   async completeOrder(orderId) {
     return await request(`/orders/${orderId}/complete`, {
       method: 'POST',
@@ -309,5 +310,128 @@ export const api = {
 
   async getUsers() {
     return await request('/users');
+  },
+
+  async createAdminUser(userData) {
+    return await request('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  async updateAdminUser(id, userData) {
+    return await request(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  async deleteAdminUser(id) {
+    return await request(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Admin Membership Tiers
+  async getTiers() {
+    try {
+      const data = await request('/admin/tiers');
+      return data.tiers || [];
+    } catch {
+      return [
+        { id: 1, name: 'Bronze', spend_threshold: 0, sort_order: 1 },
+        { id: 2, name: 'Silver', spend_threshold: 2000, sort_order: 2 },
+        { id: 3, name: 'Gold', spend_threshold: 5000, sort_order: 3 },
+        { id: 4, name: 'Platinum', spend_threshold: 10000, sort_order: 4 },
+      ];
+    }
+  },
+
+  async createTier(tierData) {
+    return await request('/admin/tiers', {
+      method: 'POST',
+      body: JSON.stringify(tierData),
+    });
+  },
+
+  async updateTier(id, tierData) {
+    return await request(`/admin/tiers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(tierData),
+    });
+  },
+
+  async deleteTier(id) {
+    return await request(`/admin/tiers/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getTierUsers() {
+    try {
+      const data = await request('/admin/tiers/users');
+      return data.users || [];
+    } catch {
+      return [];
+    }
+  },
+
+  // Admin Donations
+  async getDonationSummary(period = '') {
+    const q = period ? `?period=${encodeURIComponent(period)}` : '';
+    return await request(`/admin/donations/summary${q}`);
+  },
+
+  async getDonationHistory() {
+    const data = await request('/admin/donations/history');
+    return data.history || [];
+  },
+
+  async updateDonationStatus(data) {
+    return await request('/admin/donations/status', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Gift Cards
+  async getGiftCards() {
+    const data = await request('/admin/gift-cards');
+    return data.gift_cards || [];
+  },
+
+  async createGiftCard(cardData) {
+    return await request('/admin/gift-cards', {
+      method: 'POST',
+      body: JSON.stringify(cardData),
+    });
+  },
+
+  async validateGiftCard(code) {
+    return await request('/orders/validate-gift-card', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  // Loyalty & Rewards
+  async getLoyaltyStatus() {
+    return await request('/loyalty/status');
+  },
+
+  async getLoyaltyProfile() {
+    return await this.getLoyaltyStatus();
+  },
+
+  async getLoyaltyHistory() {
+    const data = await request('/loyalty/history');
+    return data.history || [];
+  },
+
+  async convertLoyaltyPoints() {
+    return await request('/loyalty/convert', {
+      method: 'POST',
+    });
   }
 };
+

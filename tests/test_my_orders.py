@@ -6,6 +6,11 @@ def test_my_orders():
     app = create_app()
     with app.app_context():
         admin = User.query.filter_by(role='admin').first()
+        if not admin:
+            admin = User(email="admin_test@example.com", full_name="Admin Test", role="admin")
+            admin.set_password("adminpass")
+            db.session.add(admin)
+            db.session.commit()
         assert admin is not None
         orders = Order.query.filter((Order.user_id == admin.id) | (Order.customer_email == admin.email)).all()
         assert len(orders) >= 0

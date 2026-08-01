@@ -35,7 +35,13 @@ class Config:
     ALLOWED_SETTINGS = {
         'sale_active', 'discount_active', 'discount_percent', 'custom_sale_text', 
         'discount_categories', 'discount_product_ids', 'whatsapp_number', 
-        'contact_number', 'sale_bundle_name', 'owner_whatsapp'
+        'contact_number', 'sale_bundle_name', 'owner_whatsapp',
+        'points_per_egp', 'points_to_egp_rate', 'review_bonus_points', 
+        'social_follow_bonus_points', 'referral_voucher_amount', 
+        'referral_voucher_min_spend', 'referral_min_order_amount', 
+        'points_expiry_months', 'voucher_expiry_months',
+        'donation_percentage', 'birthday_reward_amount', 'birthday_reward_min_tier',
+        'birthday_reward_lead_days', 'gift_card_default_expiry_months', 'email_quota_warning_percent'
     }
 
     # JWT Authentication Configuration
@@ -88,19 +94,30 @@ def create_app(config_class=Config):
         admin_users_bp,
         admin_settings_bp,
         admin_images_bp,
-        admin_orders_bp
+        admin_orders_bp,
+        admin_tiers_bp,
+        admin_donations_bp,
+        admin_giftcards_bp
     )
+
+    from api.features.loyalty import loyalty_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(categories_bp, url_prefix='/api/categories')
     app.register_blueprint(products_bp, url_prefix='/api/products')
     app.register_blueprint(cart_bp, url_prefix='/api/orders') # handles POST /api/orders
     app.register_blueprint(cart_db_bp, url_prefix='/api/cart') # handles cart persistence CRUD
+    app.register_blueprint(loyalty_bp, url_prefix='/api/loyalty')
     
     app.register_blueprint(admin_users_bp, url_prefix='/api/users')
     app.register_blueprint(admin_settings_bp, url_prefix='/api/settings')
     app.register_blueprint(admin_images_bp, url_prefix='/api/images')
+    app.register_blueprint(admin_images_bp, url_prefix='/api/admin/images', name='admin_images_alias')
     app.register_blueprint(admin_orders_bp, url_prefix='/api/orders') # handles GET /api/orders and POST /api/orders/<id>/complete
+    app.register_blueprint(admin_tiers_bp, url_prefix='/api/admin/tiers')
+    app.register_blueprint(admin_donations_bp, url_prefix='/api/admin/donations')
+    app.register_blueprint(admin_giftcards_bp, url_prefix='/api/admin/gift-cards')
+
 
     # No general CSRF exemptions to protect JWT HttpOnly cookie authentication.
     # Exclude only testing/verification routes if any.

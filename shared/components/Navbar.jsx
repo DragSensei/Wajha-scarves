@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingBag, Menu, X, Heart } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, Heart, Crown } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { getWishlist } from '@/shared/utils/wishlist';
 
@@ -75,7 +75,7 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             <img 
               src="/diya-logo.png" 
               alt="Diya Logo" 
-              className="h-14 sm:h-16 md:h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+              className="h-28 sm:h-32 md:h-40 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
             />
           </Link>
         </div>
@@ -107,6 +107,9 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
                   <div className="bg-white border border-surface-container shadow-lg">
                     <Link to="/profile" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-on-background">
                       My Profile
+                    </Link>
+                    <Link to="/rewards" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-primary font-semibold border-t border-surface-container">
+                      Diya Rewards
                     </Link>
                     {user.role === 'admin' && (
                       <Link to="/admin" className="block px-4 py-3 text-xs font-sans tracking-widest uppercase hover:bg-surface-container transition-colors text-on-background border-t border-surface-container">
@@ -237,6 +240,15 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
             >
               <span>Wishlist ({wishlistCount})</span>
               <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+            </Link>
+
+            <Link 
+              to="/rewards" 
+              onClick={() => setIsMenuOpen(false)}
+              className="text-xs font-sans tracking-widest text-primary uppercase font-bold hover:text-primary-container transition-colors pt-3 flex justify-between items-center"
+            >
+              <span>Diya Rewards Club</span>
+              <Crown className="w-4 h-4 text-primary" />
             </Link>
 
             <Link 

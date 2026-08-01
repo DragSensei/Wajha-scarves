@@ -7,6 +7,7 @@ import { syncWishlist } from '@/shared/utils/wishlist';
 import Navbar from '@/shared/components/Navbar';
 import Footer from '@/shared/components/Footer';
 import AboutPage from '@/shared/components/AboutPage';
+import NotificationToast from '@/shared/components/NotificationToast';
 
 // Customer Pages
 import Shop from '@/features/products/components/Shop';
@@ -17,6 +18,8 @@ import CheckoutPage from '@/features/cart/components/CheckoutPage';
 import LoginPage from '@/features/auth/components/LoginPage';
 import RegisterPage from '@/features/auth/components/RegisterPage';
 import ProfilePage from '@/features/auth/components/ProfilePage';
+import BirthdateOnboarding from '@/features/auth/components/BirthdateOnboarding';
+import RewardsPanel from '@/features/loyalty/components/RewardsPanel';
 import OrderConfirmationPage from '@/features/cart/components/OrderConfirmationPage';
 
 // Admin Components
@@ -30,7 +33,12 @@ import ProductFormAdmin from '@/features/admin/components/ProductFormAdmin';
 import CategoriesAdmin from '@/features/admin/components/CategoriesAdmin';
 import UsersAdmin from '@/features/admin/components/UsersAdmin';
 import OrdersAdmin from '@/features/admin/components/OrdersAdmin';
+import OrderDetailAdmin from '@/features/admin/components/OrderDetailAdmin';
 import SettingsAdmin from '@/features/admin/components/SettingsAdmin';
+import TiersManager from '@/features/admin/components/TiersManager';
+import DonationsManager from '@/features/admin/components/DonationsManager';
+import GiftCardsManager from '@/features/admin/components/GiftCardsManager';
+
 
 function AppContent() {
   const location = useLocation();
@@ -221,6 +229,12 @@ function AppContent() {
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  // Mandatory Birthdate Gate Check
+  const isOnboardingRoute = location.pathname === '/onboarding/birthdate';
+  if (user && !user.birth_date && !isAdminRoute && !isOnboardingRoute) {
+    return <Navigate to="/onboarding/birthdate" replace />;
+  }
+
   if (isAdminRoute) {
     if (!user || user.role !== 'admin') {
       return <Navigate to="/login" replace />;
@@ -244,8 +258,13 @@ function AppContent() {
                 <Route path="/admin/products/:id/delete" element={<ProductFormAdmin mode="delete" />} />
                 <Route path="/admin/categories" element={<CategoriesAdmin />} />
                 <Route path="/admin/users" element={<UsersAdmin />} />
+                <Route path="/admin/tiers" element={<TiersManager />} />
+                <Route path="/admin/donations" element={<DonationsManager />} />
+                <Route path="/admin/gift-cards" element={<GiftCardsManager />} />
                 <Route path="/admin/orders" element={<OrdersAdmin />} />
+                <Route path="/admin/orders/:id" element={<OrderDetailAdmin />} />
                 <Route path="/admin/settings" element={<SettingsAdmin />} />
+
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Routes>
             </div>
@@ -275,6 +294,8 @@ function AppContent() {
           <Route path="/checkout" element={<CheckoutPage cartItems={cartItems} onClearCart={handleClearCart} user={user} />} />
           <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/register" element={<RegisterPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/onboarding/birthdate" element={<BirthdateOnboarding user={user} onUserUpdate={setUser} />} />
+          <Route path="/rewards" element={<RewardsPanel user={user} />} />
           <Route path="/profile" element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" replace />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/our-story" element={<AboutPage />} />
@@ -284,6 +305,7 @@ function AppContent() {
 
       {!isCheckoutRoute && <Footer />}
 
+      <NotificationToast />
       <CartPage 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 

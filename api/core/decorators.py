@@ -121,22 +121,10 @@ def require_auth(f):
     def decorated(*args, **kwargs):
         # ponytail: session fallback for integration tests to minimize diff across test suite.
         if current_app.config.get('TESTING') and session.get('is_admin'):
-            class MockUser:
-                id = 1
-                email = 'admin@test.com'
-                role = 'admin'
-                full_name = 'Admin User'
-                token_version = 1
-                def get(self, key, default=None):
-                    return getattr(self, key, default)
-                def to_dict(self):
-                    return {
-                        "id": self.id,
-                        "email": self.email,
-                        "role": self.role,
-                        "full_name": self.full_name
-                    }
-            user = MockUser()
+            from types import SimpleNamespace
+            user = SimpleNamespace(id=1, email='admin@test.com', role='admin', full_name='Admin User', token_version=1,
+                                   get=lambda k, d=None: getattr(user, k, d),
+                                   to_dict=lambda: {"id": 1, "email": "admin@test.com", "role": "admin", "full_name": "Admin User"})
             request.current_user = user
             g.current_user = user
             return f(*args, **kwargs)
@@ -177,13 +165,10 @@ def admin_required(f):
         from api.core.models import User
         # ponytail: allow bootstrapping the first admin user if no users exist in database (local auth mode only and only for registration)
         if current_app.config.get('AUTH_MODE') == 'local' and request.endpoint and request.endpoint.endswith('.register') and not User.query.first():
-            class BootstrapUser:
-                id = 0
-                email = 'bootstrap@local'
-                role = 'admin'
-                full_name = 'Bootstrap Admin'
-            request.current_user = BootstrapUser()
-            g.current_user = request.current_user
+            from types import SimpleNamespace
+            user = SimpleNamespace(id=0, email='bootstrap@local', role='admin', full_name='Bootstrap Admin')
+            request.current_user = user
+            g.current_user = user
             return f(*args, **kwargs)
 
         @require_auth

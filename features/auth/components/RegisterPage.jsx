@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '@/shared/lib/api';
 
 export default function RegisterPage({ onLoginSuccess }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const refParam = searchParams.get('ref') || '';
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -17,13 +21,15 @@ export default function RegisterPage({ onLoginSuccess }) {
     setError(null);
 
     try {
-      // 1. Register the user
+      // 1. Register the user with birth_date and optional referral code
       await api.register({
         email,
         password,
         full_name: fullName,
         phone,
-        role: 'student' // default storefront customer role
+        birth_date: birthDate,
+        referred_by: refParam,
+        role: 'user' // default storefront customer role
       });
 
       // 2. Automatically log them in after registration
@@ -81,6 +87,20 @@ export default function RegisterPage({ onLoginSuccess }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="sarah@example.com" 
+            className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
+          />
+        </div>
+
+        <div className="border-b border-outline/30 pb-2">
+          <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+            Date of Birth *
+          </label>
+          <input 
+            type="date" 
+            required 
+            max={new Date().toISOString().split('T')[0]}
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
             className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
           />
         </div>

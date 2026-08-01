@@ -82,6 +82,47 @@ def api_create_order():
             product.stock -= qty
             processed_items.append((product, qty, price))
 
+        subtotal_amount = total_amount
+        discount_amount = 0.0
+        applied_voucher_code = None
+
+        # Handle Gift Card Redemption
+        gift_card_code = (data.get('gift_card_code') or '').strip().upper()
+        applied_gift_card = None
+        if gift_card_code:
+            from api.core.models import GiftCard
+            from datetime import datetime, timezone
+            card = GiftCard.query.filter_by(code=gift_card_code).first()
+            if card and not card.is_redeemed:
+                now = datetime.now(timezone.utc)
+                expires = card.expires_at
+                if expires and expires.tzinfo is None:
+                    expires = expires.replace(tzinfo=timezone.utc)
+                if now <= expires:
+                    applied_gift_card = card
+                    discount_amount += card.value
+                    applied_voucher_code = f"GIFT CARD: {card.code}"
+                    total_amount = max(0.0, total_amount - card.value)
+
+        # Handle Loyalty Voucher Redemption
+        voucher_id = data.get('voucher_id')
+        applied_voucher = None
+        if voucher_id:
+            from api.core.models import LoyaltyVoucher
+            from datetime import datetime, timezone
+            v = db.session.get(LoyaltyVoucher, int(voucher_id))
+            if v and not v.redeemed:
+                now = datetime.now(timezone.utc)
+                expires = v.expires_at
+                if expires and expires.tzinfo is None:
+                    expires = expires.replace(tzinfo=timezone.utc)
+                if now <= expires and total_amount >= (v.min_order_amount or 0):
+                    applied_voucher = v
+                    discount_amount += v.value
+                    voucher_label = f"VOUCHER ({v.source})"
+                    applied_voucher_code = f"{applied_voucher_code}, {voucher_label}" if applied_voucher_code else voucher_label
+                    total_amount = max(0.0, total_amount - v.value)
+
         detailed_name = f"{customer_name} — Ordered: {items_summary[:100]}"
         new_order = Order(
             user_id=user_id,
@@ -107,11 +148,54 @@ def api_create_order():
             )
             db.session.add(order_item)
 
+        if applied_gift_card:
+            from datetime import datetime, timezone
+            applied_gift_card.is_redeemed = True
+            applied_gift_card.redeemed_at = datetime.now(timezone.utc)
+
+        if applied_voucher:
+            applied_voucher.redeemed = True
+
         db.session.commit()
+
+        # Instantly reconcile loyalty points & referral rewards
+        try:
+            from api.features.loyalty.services import reconcile_order_loyalty
+            reconcile_order_loyalty()
+        except Exception:
+            pass
+
         return jsonify({'success': True, 'order_id': new_order.id}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@cart_bp.route('/validate-gift-card', methods=['POST'])
+@limiter.limit("3 per minute")
+def validate_gift_card_route():
+    data = request.get_json() or {}
+    code = (data.get('code') or '').strip().upper()
+    if not code:
+        return jsonify({'error': 'Gift card code is required'}), 400
+
+    from api.core.models import GiftCard
+    from datetime import datetime, timezone
+
+    card = GiftCard.query.filter_by(code=code).first()
+    if not card:
+        return jsonify({'error': 'Invalid gift card code'}), 400
+    if card.is_redeemed:
+        return jsonify({'error': 'Gift card has already been redeemed'}), 400
+
+    now = datetime.now(timezone.utc)
+    expires = card.expires_at
+    if expires and expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if now > expires:
+        return jsonify({'error': 'Gift card has expired'}), 400
+
+    return jsonify({'valid': True, 'code': card.code, 'value': card.value}), 200
 
 
 @cart_bp.route('/my-orders', methods=['GET'])

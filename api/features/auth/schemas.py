@@ -12,7 +12,7 @@ def validate_register(data):
     email = data.get('email')
     password = data.get('password')
     full_name = data.get('full_name')
-    role = data.get('role', 'student')
+    role = data.get('role', 'user')
 
     if not email:
         errors['email'] = "Email is required"
@@ -29,12 +29,26 @@ def validate_register(data):
     elif not isinstance(full_name, str) or not full_name.strip():
         errors['full_name'] = "Full name cannot be empty"
 
-    if role not in ('admin', 'instructor', 'student'):
-        errors['role'] = "Role must be one of: admin, instructor, student"
+    if role not in ('admin', 'user', 'student', 'instructor'):
+        errors['role'] = "Role must be one of: admin, user"
 
     phone = data.get('phone')
     if phone and not isinstance(phone, str):
         errors['phone'] = "Phone must be a string"
+
+    birth_date = data.get('birth_date')
+    if not birth_date:
+        errors['birth_date'] = "Birthdate is required"
+    elif not isinstance(birth_date, str):
+        errors['birth_date'] = "Birthdate must be a YYYY-MM-DD string"
+    else:
+        try:
+            from datetime import datetime
+            d = datetime.strptime(birth_date, '%Y-%m-%d').date()
+            if d > datetime.now().date():
+                errors['birth_date'] = "Birthdate cannot be in the future"
+        except ValueError:
+            errors['birth_date'] = "Invalid birthdate format. Use YYYY-MM-DD"
 
     return len(errors) == 0, errors
 

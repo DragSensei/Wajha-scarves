@@ -28,7 +28,7 @@ def register():
     email = data.get('email')
     password = data.get('password')
     full_name = data.get('full_name')
-    role = data.get('role', 'student')
+    role = data.get('role', 'user')
 
     # Security check: only allow public registration for standard customer/student accounts.
     # Creating administrative or instructor accounts requires admin rights (or ADMIN_PASSWORD for initial bootstrap).
@@ -50,8 +50,41 @@ def register():
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Validation failed", "details": {"email": "Email is already registered."}}), 400
 
-    user = User(email=email, full_name=full_name, role=role)
+    import secrets
+    from datetime import datetime
+    
+    ref_code = secrets.token_urlsafe(9)
+    while User.query.filter_by(referral_code=ref_code).first():
+        ref_code = secrets.token_urlsafe(9)
+
+    user = User(email=email, full_name=full_name, role=role, referral_code=ref_code)
     user.set_password(password)
+
+    birth_date_str = data.get('birth_date')
+    if birth_date_str:
+        user.birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d').date()
+
+    referred_by_code = data.get('referred_by') or data.get('referral_code_used')
+    if referred_by_code and isinstance(referred_by_code, str):
+        referrer = User.query.filter_by(referral_code=referred_by_code.strip()).first()
+        if referrer:
+            user.referred_by_id = referrer.id
+            try:
+                from api.core.models import LoyaltyPointsEntry, Setting
+                from datetime import datetime, timedelta, timezone
+                pts = int(Setting.get_setting('referral_signup_points', '500'))
+                if pts > 0:
+                    now = datetime.now(timezone.utc).replace(tzinfo=None)
+                    entry = LoyaltyPointsEntry(
+                        user_id=referrer.id,
+                        amount=pts,
+                        source='referral_signup_bonus',
+                        earned_at=now,
+                        expires_at=now + timedelta(days=180)
+                    )
+                    db.session.add(entry)
+            except Exception:
+                pass
 
     phone = data.get('phone')
     if phone and isinstance(phone, str) and phone.strip():
@@ -160,6 +193,16 @@ def logout():
 def me():
     user = request.current_user
     if current_app.config.get('AUTH_MODE') == 'local':
+        if hasattr(user, 'referral_code') and not user.referral_code:
+            import secrets
+            ref_code = secrets.token_urlsafe(9)
+            while User.query.filter_by(referral_code=ref_code).first():
+                ref_code = secrets.token_urlsafe(9)
+            user.referral_code = ref_code
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         return jsonify({"user": user.to_dict()})
     else:
         return jsonify({"user": user})
@@ -186,6 +229,18 @@ def update_profile():
         user.city = encrypt_text(data['city'].strip())
     if 'postal_code' in data:
         user.postal_code = encrypt_text(data['postal_code'].strip())
+
+    if 'birth_date' in data and data['birth_date']:
+        if user.birth_date is not None:
+            return jsonify({"error": "Birthdate is immutable once set and cannot be modified."}), 400
+        try:
+            from datetime import datetime
+            parsed_date = datetime.strptime(str(data['birth_date']).strip(), '%Y-%m-%d').date()
+            if parsed_date > datetime.now().date():
+                return jsonify({"error": "Birthdate cannot be in the future"}), 400
+            user.birth_date = parsed_date
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid birthdate format. Use YYYY-MM-DD"}), 400
 
     try:
         db.session.commit()

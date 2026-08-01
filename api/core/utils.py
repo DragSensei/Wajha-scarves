@@ -26,18 +26,10 @@ def paginate_query(query, request, default_per_page=12, max_per_page=50, total=N
 
 
 def generate_slug(name: str) -> str:
-    """
-    Generates a slug from a given string.
-    Lowercases the text, replaces spaces with hyphens, and removes non-alphanumeric/non-hyphen characters.
-    """
+    """Generates a URL-friendly slug from a given string."""
     if not name:
         return ""
-    name = name.lower()
-    name = name.replace(' ', '-')
-    name = re.sub(r'[^a-z0-9\-]', '', name)
-    name = re.sub(r'-+', '-', name)
-    name = name.strip('-')
-    return name
+    return re.sub(r'[-\s]+', '-', re.sub(r'[^\w\s-]', '', name.lower())).strip('-')
 
 
 def get_image_url(filename):

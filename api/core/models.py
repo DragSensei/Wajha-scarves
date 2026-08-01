@@ -68,19 +68,27 @@ class OrderItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     price_at_order = db.Column(db.Float, nullable=False)
 
+    product = db.relationship('Product', lazy='selectin')
+
     def to_dict(self):
+        from api.core.utils import get_image_url
+        img_url = None
+        if self.product:
+            if self.product.image_filename:
+                img_url = get_image_url(self.product.image_filename)
+            elif self.product.images:
+                sorted_imgs = sorted(self.product.images, key=lambda x: (not x.is_primary, x.sort_order))
+                if sorted_imgs:
+                    img_url = get_image_url(sorted_imgs[0].filename)
+
         return {
             'id': self.id,
             'product_id': self.product_id,
             'product_name': self.product_name or (self.product.name if self.product else "Unknown Product"),
             'quantity': self.quantity,
-            'price_at_order': self.price_at_order
+            'price_at_order': self.price_at_order,
+            'image_url': img_url
         }
-
-# Caches for Settings
-_APP_SETTINGS_CACHE = {}
-_APP_SETTINGS_CACHE_TTL = 60  # seconds
-_APP_SETTINGS_CACHE_LAST_LOAD = 0
 
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -89,8 +97,7 @@ class Setting(db.Model):
 
     @staticmethod
     def get_setting(key, default=None):
-        """Helper function to retrieve a setting's value with request-level and app-level caching."""
-        # 1. Try request-level cache (flask.g)
+        """Helper function to retrieve a setting's value with request-level caching."""
         from flask import has_request_context, g
         if has_request_context():
             if not hasattr(g, '_settings_cache'):
@@ -98,28 +105,9 @@ class Setting(db.Model):
             if key in g._settings_cache:
                 return g._settings_cache[key]
 
-        # 2. Try app-level cache
-        global _APP_SETTINGS_CACHE, _APP_SETTINGS_CACHE_LAST_LOAD
-        now = time.time()
-        if now - _APP_SETTINGS_CACHE_LAST_LOAD > _APP_SETTINGS_CACHE_TTL:
-            try:
-                all_settings = Setting.query.all()
-                _APP_SETTINGS_CACHE = {s.key: s.value for s in all_settings}
-                _APP_SETTINGS_CACHE_LAST_LOAD = now
-            except Exception:
-                pass
-
-        if key in _APP_SETTINGS_CACHE:
-            val = _APP_SETTINGS_CACHE[key]
-            if has_request_context():
-                g._settings_cache[key] = val
-            return val
-
-        # 3. Fallback to database query
         try:
             setting = Setting.query.filter_by(key=key).first()
             val = setting.value if setting else default
-            _APP_SETTINGS_CACHE[key] = val
             if has_request_context():
                 g._settings_cache[key] = val
             return val
@@ -128,27 +116,16 @@ class Setting(db.Model):
 
     @staticmethod
     def get_many(keys, defaults=None):
-        """Retrieves multiple settings at once, using caches and updating them in one query."""
+        """Retrieves multiple settings at once, using request-level cache or a single database query."""
         if not defaults:
             defaults = {}
         results = {}
         missing_keys = []
-
         from flask import has_request_context, g
-        global _APP_SETTINGS_CACHE, _APP_SETTINGS_CACHE_LAST_LOAD
-        now = time.time()
-        cache_valid = (now - _APP_SETTINGS_CACHE_LAST_LOAD <= _APP_SETTINGS_CACHE_TTL)
 
         for k in keys:
             if has_request_context() and hasattr(g, '_settings_cache') and k in g._settings_cache:
                 results[k] = g._settings_cache[k]
-            elif cache_valid and k in _APP_SETTINGS_CACHE:
-                val = _APP_SETTINGS_CACHE[k]
-                results[k] = val
-                if has_request_context():
-                    if not hasattr(g, '_settings_cache'):
-                        g._settings_cache = {}
-                    g._settings_cache[k] = val
             else:
                 missing_keys.append(k)
 
@@ -159,12 +136,10 @@ class Setting(db.Model):
                 for k in missing_keys:
                     val = found_map.get(k, defaults.get(k))
                     results[k] = val
-                    _APP_SETTINGS_CACHE[k] = val
                     if has_request_context():
                         if not hasattr(g, '_settings_cache'):
                             g._settings_cache = {}
                         g._settings_cache[k] = val
-                _APP_SETTINGS_CACHE_LAST_LOAD = now
             except Exception:
                 for k in missing_keys:
                     results[k] = defaults.get(k)
@@ -173,7 +148,7 @@ class Setting(db.Model):
 
     @staticmethod
     def set_setting(key, value):
-        """Helper function to create or update a setting, updating caches."""
+        """Helper function to create or update a setting."""
         setting = Setting.query.filter_by(key=key).first()
         if setting:
             setting.value = value
@@ -182,14 +157,12 @@ class Setting(db.Model):
             db.session.add(setting)
         try:
             db.session.commit()
-            global _APP_SETTINGS_CACHE
-            _APP_SETTINGS_CACHE[key] = value
             from flask import has_request_context, g
             if has_request_context():
                 if not hasattr(g, '_settings_cache'):
                     g._settings_cache = {}
                 g._settings_cache[key] = value
-        except Exception as e:
+        except Exception:
             db.session.rollback()
         return setting
 
@@ -201,7 +174,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='student')  # 'admin', 'instructor', 'student'
+    role = db.Column(db.String(20), nullable=False, default='user')  # 'admin', 'user'
     full_name = db.Column(db.String(255), nullable=False)
     failed_login_attempts = db.Column(db.Integer, default=0, nullable=False)
     lockout_until = db.Column(db.DateTime, nullable=True)
@@ -212,6 +185,10 @@ class User(db.Model):
     postal_code = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    birth_date = db.Column(db.Date, nullable=True)
+    referral_code = db.Column(db.String(12), unique=True, nullable=True)
+    referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    referred_by = db.relationship('User', remote_side=[id], backref=db.backref('referees', lazy='dynamic'))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -231,7 +208,10 @@ class User(db.Model):
             "city": decrypt_text(self.city),
             "postal_code": decrypt_text(self.postal_code),
             "is_active": self.is_active,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "birth_date": self.birth_date.isoformat() if self.birth_date else None,
+            "referral_code": self.referral_code,
+            "referred_by_id": self.referred_by_id
         }
 
 # Cart Item Model
@@ -271,5 +251,128 @@ class WishlistItem(db.Model):
 
     product = db.relationship('Product', lazy='selectin')
     user = db.relationship('User', backref=db.backref('wishlist_items', lazy='selectin', cascade='all, delete-orphan'), lazy='selectin')
+
+
+class MembershipTier(db.Model):
+    __tablename__ = 'membership_tiers'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    spend_threshold = db.Column(db.Float, default=0.0)
+    sort_order = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'spend_threshold': self.spend_threshold,
+            'sort_order': self.sort_order
+        }
+
+
+class DonationRecord(db.Model):
+    __tablename__ = 'donation_records'
+    id = db.Column(db.Integer, primary_key=True)
+    period = db.Column(db.String(20), unique=True, nullable=False)
+    status = db.Column(db.String(20), default="pending")
+    donated_at = db.Column(db.DateTime, nullable=True)
+    note = db.Column(db.Text, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'period': self.period,
+            'status': self.status,
+            'donated_at': self.donated_at.isoformat() if self.donated_at else None,
+            'note': self.note
+        }
+
+
+class GiftCard(db.Model):
+    __tablename__ = 'gift_cards'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(32), unique=True, nullable=False)
+    value = db.Column(db.Float, nullable=False)
+    is_redeemed = db.Column(db.Boolean, default=False)
+    redeemed_at = db.Column(db.DateTime, nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'value': self.value,
+            'is_redeemed': self.is_redeemed,
+            'redeemed_at': self.redeemed_at.isoformat() if self.redeemed_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class LoyaltyPointsEntry(db.Model):
+    __tablename__ = 'loyalty_points_entries'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    source = db.Column(db.String(50), nullable=False)
+    ref_id = db.Column(db.Integer, nullable=True)
+    earned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'amount': self.amount,
+            'source': self.source,
+            'ref_id': self.ref_id,
+            'earned_at': self.earned_at.isoformat() if self.earned_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None
+        }
+
+
+class LoyaltyVoucher(db.Model):
+    __tablename__ = 'loyalty_vouchers'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    value = db.Column(db.Float, nullable=False)
+    source = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=True)
+    redeemed = db.Column(db.Boolean, default=False)
+    min_order_amount = db.Column(db.Float, default=0.0)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'value': self.value,
+            'source': self.source,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'redeemed': self.redeemed,
+            'min_order_amount': self.min_order_amount
+        }
+
+
+class ReferralConversion(db.Model):
+    __tablename__ = 'referral_conversions'
+    id = db.Column(db.Integer, primary_key=True)
+    referrer_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    referee_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    qualifying_order_id = db.Column(db.Integer, db.ForeignKey('order.id', ondelete='SET NULL'), nullable=True)
+    reward_issued = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'referrer_id': self.referrer_id,
+            'referee_id': self.referee_id,
+            'qualifying_order_id': self.qualifying_order_id,
+            'reward_issued': self.reward_issued,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 
 

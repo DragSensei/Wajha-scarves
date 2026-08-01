@@ -6,23 +6,39 @@ from api.features.admin import (
     admin_users_bp,
     admin_settings_bp,
     admin_images_bp,
-    admin_orders_bp
+    admin_orders_bp,
+    admin_tiers_bp,
+    admin_donations_bp,
+    admin_giftcards_bp
 )
 from api.core.decorators import admin_required, require_auth
 from api.core.extensions import limiter, csrf
 from api.core.db import db
-from api.core.models import User, Order, Setting, ProductImage, Product
+from api.core.models import User, Order, Setting, ProductImage, Product, MembershipTier
 from api.core.utils import paginate_query
 from api.features.admin.services import (
     create_or_reactivate_user,
     update_user,
     soft_delete_user,
     serialize_user,
-    DuplicateEmailError
+    DuplicateEmailError,
+    get_all_tiers,
+    create_tier,
+    update_tier,
+    delete_tier,
+    get_user_rankings,
+    DuplicateTierError,
+    ProtectedTierError,
+    get_donation_summary,
+    get_donation_history,
+    toggle_donation_status,
+    generate_gift_card,
+    get_all_gift_cards
 )
 from api.features.products.services import process_and_save_image
 
 logger = logging.getLogger(__name__)
+
 
 # Helpers for image serialization
 def get_image_url(filename):
@@ -62,6 +78,20 @@ def serialize_order(order):
     if user:
         account_info = user.to_dict()
 
+    calculated_subtotal = sum(i.get('quantity', 1) * i.get('price_at_order', 0.0) for i in items) if items else order.total_amount
+    subtotal_amount = getattr(order, 'subtotal_amount', None)
+    if subtotal_amount is None:
+        subtotal_amount = calculated_subtotal
+
+    discount_amount = getattr(order, 'discount_amount', None)
+    if discount_amount is None or discount_amount == 0.0:
+        if subtotal_amount > order.total_amount:
+            discount_amount = round(subtotal_amount - order.total_amount, 2)
+        else:
+            discount_amount = 0.0
+
+    voucher_code = getattr(order, 'voucher_code', None)
+
     return {
         'id': order.id,
         'user_id': order.user_id,
@@ -71,6 +101,9 @@ def serialize_order(order):
         'city': order.city,
         'postal_code': order.postal_code,
         'phone': order.phone,
+        'subtotal_amount': round(subtotal_amount, 2),
+        'discount_amount': round(discount_amount, 2),
+        'voucher_code': voucher_code,
         'total_amount': order.total_amount,
         'status': order.status,
         'order_date': order.created_at.isoformat() if order.created_at else None,
@@ -189,6 +222,19 @@ def get_orders():
         }
     })
 
+@admin_orders_bp.route('/<int:order_id>', methods=['GET'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def get_order_by_id(order_id):
+    from sqlalchemy.orm import joinedload, selectinload
+    order = Order.query.options(
+        joinedload(Order.user),
+        selectinload(Order.items)
+    ).filter_by(id=order_id).first()
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    return jsonify({'order': serialize_order(order)})
+
 @admin_orders_bp.route('/<int:order_id>/complete', methods=['POST'])
 @admin_required
 @limiter.limit("200 per day; 50 per hour")
@@ -227,20 +273,200 @@ def update_settings():
         
     whitelist = current_app.config.get('ALLOWED_SETTINGS', set())
     
+    validated_data = {}
     for key, value in data.items():
         if key not in whitelist:
             return jsonify({"error": f"Invalid setting key: {key}"}), 400
-        if not isinstance(value, str):
+        if isinstance(value, (int, float, bool)):
+            value = str(value)
+        elif not isinstance(value, str):
             return jsonify({"error": "Setting values must be strings"}), 400
+        validated_data[key] = value
+
+    # Domain validation for settings
+    percentages = {'discount_percent', 'donation_percentage', 'email_quota_warning_percent'}
+    non_negative_nums = {'points_per_egp', 'points_to_egp_rate', 'review_bonus_points', 
+                        'social_follow_bonus_points', 'referral_voucher_amount', 
+                        'referral_voucher_min_spend', 'referral_min_order_amount', 'birthday_reward_amount'}
+    integers = {'points_expiry_months', 'voucher_expiry_months', 'gift_card_default_expiry_months', 'birthday_reward_lead_days'}
+
+    for k, v in validated_data.items():
+        if k in percentages:
+            try:
+                val = float(v)
+                if not (0 <= val <= 100):
+                    return jsonify({"error": f"Setting '{k}' must be a percentage between 0 and 100"}), 400
+            except ValueError:
+                pass
+        elif k in non_negative_nums:
+            try:
+                val = float(v)
+                if val < 0:
+                    return jsonify({"error": f"Setting '{k}' cannot be negative"}), 400
+            except ValueError:
+                pass
+        elif k in integers:
+            try:
+                val = int(v)
+                if val < 0:
+                    return jsonify({"error": f"Setting '{k}' cannot be negative"}), 400
+            except ValueError:
+                pass
             
     try:
-        for key, value in data.items():
+        for key, value in validated_data.items():
             Setting.set_setting(key, value)
         
         settings = Setting.query.all()
         return jsonify({s.key: s.value for s in settings})
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# ----------------- TIERS ADMIN ROUTES -----------------
+
+@admin_tiers_bp.route('', methods=['GET'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def get_tiers():
+    tiers = get_all_tiers()
+    return jsonify({"tiers": [t.to_dict() for t in tiers]})
+
+@admin_tiers_bp.route('', methods=['POST'])
+@admin_required
+@limiter.limit("50 per day; 20 per hour")
+def create_tier_route():
+    if not request.is_json:
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+    try:
+        tier = create_tier(request.get_json())
+        return jsonify({"tier": tier.to_dict()}), 201
+    except DuplicateTierError as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 409
+    except ValueError as e:
+        db.session.rollback()
+        details = e.args[0] if e.args and isinstance(e.args[0], dict) else {"error": str(e)}
+        return jsonify({"error": "Validation failed", "details": details}), 400
+
+@admin_tiers_bp.route('/<int:tier_id>', methods=['PUT'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def update_tier_route(tier_id):
+    if not request.is_json:
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+    tier = db.session.get(MembershipTier, tier_id)
+    if not tier:
+        return jsonify({"error": "Tier not found"}), 404
+    try:
+        updated_tier = update_tier(tier, request.get_json())
+        return jsonify({"tier": updated_tier.to_dict()}), 200
+    except DuplicateTierError as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 409
+    except ValueError as e:
+        db.session.rollback()
+        details = e.args[0] if e.args and isinstance(e.args[0], dict) else {"error": str(e)}
+        return jsonify({"error": "Validation failed", "details": details}), 400
+
+@admin_tiers_bp.route('/<int:tier_id>', methods=['DELETE'])
+@admin_required
+@limiter.limit("50 per day; 20 per hour")
+def delete_tier_route(tier_id):
+    tier = db.session.get(MembershipTier, tier_id)
+    if not tier:
+        return jsonify({"error": "Tier not found"}), 404
+    try:
+        delete_tier(tier)
+        return jsonify({"message": "Tier deleted successfully", "id": tier_id}), 200
+    except ProtectedTierError as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@admin_tiers_bp.route('/users', methods=['GET'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def get_tier_user_rankings():
+    rankings = get_user_rankings()
+    return jsonify({"users": rankings})
+
+
+# ----------------- DONATIONS ADMIN ROUTES -----------------
+
+@admin_donations_bp.route('/summary', methods=['GET'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def donation_summary_route():
+    period = request.args.get('period')
+    summary = get_donation_summary(period)
+    return jsonify(summary)
+
+@admin_donations_bp.route('/history', methods=['GET'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def donation_history_route():
+    history = get_donation_history()
+    return jsonify({"history": history})
+
+@admin_donations_bp.route('/status', methods=['PUT'])
+@admin_required
+@limiter.limit("50 per day; 20 per hour")
+def update_donation_status_route():
+    if not request.is_json:
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+    data = request.get_json()
+    period = data.get('period')
+    status = data.get('status')
+    note = data.get('note', '')
+    if not period or not status:
+        return jsonify({"error": "period and status are required"}), 400
+    if status not in ('pending', 'donated'):
+        return jsonify({"error": "status must be 'pending' or 'donated'"}), 400
+    try:
+        updated = toggle_donation_status(period, status, note)
+        return jsonify(updated), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# ----------------- GIFT CARDS ADMIN ROUTES -----------------
+
+@admin_giftcards_bp.route('', methods=['GET'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def get_gift_cards_route():
+    cards = get_all_gift_cards()
+    return jsonify({"gift_cards": cards})
+
+@admin_giftcards_bp.route('', methods=['POST'])
+@admin_required
+@limiter.limit("50 per day; 20 per hour")
+def create_gift_card_route():
+    if not request.is_json:
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+    data = request.get_json()
+    value = data.get('value')
+    if value is None:
+        return jsonify({"error": "value is required"}), 400
+    try:
+        val = float(value)
+        expiry_months = data.get('expiry_months')
+        if expiry_months is not None:
+            expiry_months = int(expiry_months)
+        card = generate_gift_card(val, expiry_months=expiry_months)
+        return jsonify({"gift_card": card}), 201
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 
 
 
@@ -294,4 +520,5 @@ def upload_image():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Image upload failure: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Image processing failed: {str(e)}"}), 500

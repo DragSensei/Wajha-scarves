@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CreditCard, ShieldCheck, Award } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
 
@@ -16,18 +16,73 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
   });
   const [loading, setLoading] = useState(false);
 
+  // Gift Card State
+  const [giftCardInput, setGiftCardInput] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState(null);
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
+  const [giftCardError, setGiftCardError] = useState('');
+
+  // Loyalty Voucher State
+  const [activeVouchers, setActiveVouchers] = useState([]);
+  const [selectedVoucherId, setSelectedVoucherId] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    api.getLoyaltyStatus()
+      .then((res) => {
+        if (active) {
+          const list = res?.active_vouchers || res?.vouchers || [];
+          const available = list.filter((v) => !v.redeemed);
+          setActiveVouchers(available);
+          if (available.length > 0) {
+            setSelectedVoucherId(String(available[0].id));
+          }
+        }
+      })
+      .catch(() => { if (active) setActiveVouchers([]); });
+    return () => { active = false; };
+  }, []);
+
   const subtotal = cartItems.reduce((acc, item) => {
     const price = item.discount_active ? item.discounted_price : item.original_price;
     return acc + price * item.quantity;
   }, 0);
   const shipping = 15.00;
-  const total = subtotal + shipping;
+  const rawTotal = subtotal + shipping;
+
+  const giftDiscount = appliedGiftCard ? Math.min(rawTotal, appliedGiftCard.value) : 0;
+  const remainingAfterGift = Math.max(0, rawTotal - giftDiscount);
+
+  const selectedVoucher = activeVouchers.find((v) => String(v.id) === String(selectedVoucherId));
+  const voucherDiscount = selectedVoucher ? Math.min(remainingAfterGift, selectedVoucher.value) : 0;
+
+  const total = Math.max(0, remainingAfterGift - voucherDiscount);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleApplyGiftCard = async (e) => {
+    e.preventDefault();
+    if (!giftCardInput.trim()) return;
+    setGiftCardLoading(true);
+    setGiftCardError('');
+
+    try {
+      const res = await api.validateGiftCard(giftCardInput.trim());
+      if (res && res.valid) {
+        setAppliedGiftCard(res);
+        setGiftCardError('');
+      }
+    } catch (err) {
+      setGiftCardError(err.message || 'Invalid or expired gift card.');
+      setAppliedGiftCard(null);
+    } finally {
+      setGiftCardLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -52,7 +107,9 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
       phone: formData.phone,
       total: total,
       items: itemsSummary,
-      order_items: orderItems
+      order_items: orderItems,
+      gift_card_code: appliedGiftCard ? appliedGiftCard.code : undefined,
+      voucher_id: selectedVoucher ? selectedVoucher.id : undefined
     };
 
     try {
@@ -202,13 +259,13 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
           </form>
         </div>
 
-        {/* Order Summary */}
-        <div className="bg-surface-container/30 p-8 border border-surface-container">
-          <h2 className="text-lg font-serif text-on-background font-medium mb-6">
+        {/* Order Summary & Gift Card Application */}
+        <div className="bg-surface-container/30 p-8 border border-surface-container space-y-6">
+          <h2 className="text-lg font-serif text-on-background font-medium">
             Summary of Purchase
           </h2>
 
-          <div className="space-y-4 max-h-96 overflow-y-auto mb-6 pr-2">
+          <div className="space-y-4 max-h-72 overflow-y-auto pr-2 border-b border-surface-container/60 pb-4">
             {cartItems.map((item) => {
               const price = item.discount_active ? item.discounted_price : item.original_price;
               return (
@@ -223,7 +280,77 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
             })}
           </div>
 
-          <div className="border-t border-surface-container/60 pt-6 space-y-3">
+          {/* Gift Card Application Form */}
+          <div className="space-y-2 pt-2 border-b border-surface-container/60 pb-6">
+            <label className="block text-[10px] font-sans tracking-widest uppercase text-outline">
+              Gift Card Code
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter 16-character code"
+                value={giftCardInput}
+                onChange={(e) => setGiftCardInput(e.target.value.toUpperCase())}
+                disabled={!!appliedGiftCard}
+                className="flex-grow text-xs font-mono border border-outline/30 px-3 py-2 bg-white focus:outline-hidden text-on-background uppercase tracking-wider"
+              />
+              {appliedGiftCard ? (
+                <button
+                  type="button"
+                  onClick={() => { setAppliedGiftCard(null); setGiftCardInput(''); }}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-sans px-3 py-2 font-bold uppercase transition-colors"
+                >
+                  Remove
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApplyGiftCard}
+                  disabled={giftCardLoading || !giftCardInput.trim()}
+                  className="bg-primary hover:bg-primary-container text-white text-xs font-sans px-4 py-2 uppercase tracking-wider font-semibold transition-colors disabled:opacity-50"
+                >
+                  {giftCardLoading ? 'Validating...' : 'Apply'}
+                </button>
+              )}
+            </div>
+
+            {giftCardError && (
+              <p className="text-[11px] font-sans text-red-600 font-medium">{giftCardError}</p>
+            )}
+            {appliedGiftCard && (
+              <p className="text-[11px] font-sans text-green-700 font-medium flex items-center gap-1">
+                ✓ Gift card <span className="font-mono">{appliedGiftCard.code}</span> applied ({formatPrice(appliedGiftCard.value)} discount).
+              </p>
+            )}
+          </div>
+          {/* Active Reward Vouchers Application */}
+          {activeVouchers.length > 0 && (
+            <div className="space-y-2 pt-2 border-b border-surface-container/60 pb-6">
+              <label className="block text-[10px] font-sans tracking-widest uppercase text-outline font-bold flex items-center gap-1">
+                <Award className="w-3.5 h-3.5 text-primary" />
+                <span>Apply Active Reward Voucher ({activeVouchers.length})</span>
+              </label>
+              <select
+                value={selectedVoucherId}
+                onChange={(e) => setSelectedVoucherId(e.target.value)}
+                className="w-full text-xs font-sans border border-outline/30 px-3 py-2 bg-white text-on-background focus:outline-hidden"
+              >
+                <option value="">-- Do not apply a voucher --</option>
+                {activeVouchers.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {formatPrice(v.value)} Voucher ({v.source.replace('_', ' ')}) — Expires {v.expires_at ? new Date(v.expires_at).toLocaleDateString() : 'Never'}
+                  </option>
+                ))}
+              </select>
+              {selectedVoucher && (
+                <p className="text-[11px] font-sans text-green-700 font-medium flex items-center gap-1">
+                  ✓ {formatPrice(selectedVoucher.value)} voucher applied ({formatPrice(voucherDiscount)} discount).
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-3">
             <div className="flex justify-between text-xs font-sans text-outline">
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
@@ -232,6 +359,18 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
               <span>Shipping & duties</span>
               <span>{formatPrice(shipping)}</span>
             </div>
+            {giftDiscount > 0 && (
+              <div className="flex justify-between text-xs font-sans text-green-700 font-bold">
+                <span>Gift Card Discount</span>
+                <span>-{formatPrice(giftDiscount)}</span>
+              </div>
+            )}
+            {voucherDiscount > 0 && (
+              <div className="flex justify-between text-xs font-sans text-green-700 font-bold">
+                <span>Reward Voucher Discount</span>
+                <span>-{formatPrice(voucherDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm font-sans text-on-background font-bold pt-3 border-t border-surface-container">
               <span>Total amount</span>
               <span className="text-primary">{formatPrice(total)}</span>

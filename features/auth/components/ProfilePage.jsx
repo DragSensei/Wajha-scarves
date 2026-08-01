@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, ShieldAlert, Phone, Package, Calendar, MapPin, ChevronDown, ChevronUp, Lock, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { User, Mail, Phone, Package, Calendar, MapPin, ChevronDown, ChevronUp, Check, Crown, Copy, Edit3, Gift } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import Pagination from '@/shared/components/Pagination';
 import { formatPrice } from '@/shared/utils/currency';
@@ -13,7 +14,15 @@ export default function ProfilePage({ user, onUserUpdate }) {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Address and Info editing state
+  // Profile editing state
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [infoForm, setInfoForm] = useState(() => ({
+    full_name: user?.full_name || '',
+    phone: user?.phone || '',
+  }));
+  const [copiedRef, setCopiedRef] = useState(false);
+
+  // Address editing state
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressForm, setAddressForm] = useState(() => ({
     phone: user?.phone || '',
@@ -38,6 +47,22 @@ export default function ProfilePage({ user, onUserUpdate }) {
     }
   }, [user]);
 
+  const handleSaveInfo = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await api.updateProfile(infoForm);
+      if (res && res.user) {
+        if (onUserUpdate) onUserUpdate(res.user);
+        setIsEditingInfo(false);
+      }
+    } catch (err) {
+      alert("Failed to update profile info: " + err.message);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const handleSaveAddress = async (e) => {
     e.preventDefault();
     setSavingProfile(true);
@@ -58,59 +83,186 @@ export default function ProfilePage({ user, onUserUpdate }) {
     }
   };
 
+  const handleCopyReferral = () => {
+    if (!user?.referral_code) return;
+    const url = `${window.location.origin}/register?ref=${user.referral_code}`;
+    navigator.clipboard.writeText(url);
+    setCopiedRef(true);
+    setTimeout(() => setCopiedRef(false), 2000);
+  };
+
   if (!user) return null;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-24 mt-12 grid grid-cols-1 md:grid-cols-3 gap-12">
       {/* Profile details column */}
       <div className="space-y-6 self-start">
+        {/* Quick Link to Rewards */}
+        <Link
+          to="/rewards"
+          className="bg-primary/10 border border-primary/30 p-4 block hover:bg-primary/20 transition-colors shadow-xs group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Crown className="w-5 h-5 text-primary" />
+              <span className="text-xs font-serif font-bold uppercase tracking-wider text-primary">Diya Rewards Club</span>
+            </div>
+            <span className="text-xs font-sans text-primary group-hover:translate-x-1 transition-transform">→</span>
+          </div>
+          <p className="text-[10px] font-sans text-outline mt-1">
+            View your point balance, active reward vouchers & tier status.
+          </p>
+        </Link>
+
         <div className="bg-white border border-surface-container/60 p-6 shadow-sm space-y-6">
-          <div className="text-center pb-6 border-b border-surface-container">
-            <User className="w-16 h-16 text-primary mx-auto mb-4" />
-            <h1 className="text-xl font-serif text-primary uppercase font-bold tracking-widest">
-              My Account
-            </h1>
-            <p className="text-[10px] font-sans tracking-widest text-outline uppercase mt-1">
-              Personal profile details
-            </p>
+          <div className="flex items-center justify-between pb-6 border-b border-surface-container">
+            <div>
+              <h1 className="text-xl font-serif text-primary uppercase font-bold tracking-widest">
+                My Account
+              </h1>
+              <p className="text-[10px] font-sans tracking-widest text-outline uppercase mt-0.5">
+                Personal profile details
+              </p>
+            </div>
+            <button
+              onClick={() => setIsEditingInfo(!isEditingInfo)}
+              className="text-[10px] font-sans tracking-widest uppercase text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>{isEditingInfo ? 'Cancel' : 'Edit'}</span>
+            </button>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
-              <User className="w-4 h-4 text-primary shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Full Name</span>
-                <span className="text-xs font-sans font-medium text-on-background truncate block">{user.full_name}</span>
+          {!isEditingInfo ? (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
+                <User className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Full Name</span>
+                  <span className="text-xs font-sans font-medium text-on-background truncate block">{user.full_name}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
-              <Mail className="w-4 h-4 text-primary shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Email Address</span>
-                <span className="text-xs font-sans font-medium text-on-background truncate block">{user.email}</span>
+              <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
+                <Mail className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Email Address</span>
+                  <span className="text-xs font-sans font-medium text-on-background truncate block">{user.email}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
-              <ShieldAlert className="w-4 h-4 text-primary shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">User Role</span>
-                <span className="text-xs font-sans font-medium text-on-background uppercase tracking-widest block">{user.role}</span>
+              <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
+                <Phone className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Phone Number</span>
+                  <span className="text-xs font-sans font-medium text-on-background block">{user.phone || 'Not provided'}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
-              <Phone className="w-4 h-4 text-primary shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Phone Number</span>
-                <span className="text-xs font-sans font-medium text-on-background block">{user.phone || 'Not provided'}</span>
+              {/* Birth Date (Immutable once set) */}
+              <div className="flex items-center space-x-3 border-b border-surface-container/30 pb-2">
+                <Calendar className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="block text-[9px] font-sans tracking-widest uppercase text-outline flex items-center justify-between">
+                    <span>Date of Birth</span>
+                    {user.birth_date && (
+                      <span className="text-[8px] text-amber-800 bg-amber-50 px-1.5 py-0.5 border border-amber-200 uppercase font-semibold">
+                        Locked
+                      </span>
+                    )}
+                  </span>
+                  {user.birth_date ? (
+                    <span className="text-xs font-sans font-medium text-on-background block">
+                      {user.birth_date}
+                    </span>
+                  ) : (
+                    <div className="mt-1 flex items-center space-x-2">
+                      <input
+                        type="date"
+                        required
+                        max={new Date().toISOString().split('T')[0]}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            try {
+                              const res = await api.updateProfile({ birth_date: val });
+                              if (res && res.user && onUserUpdate) {
+                                onUserUpdate(res.user);
+                              }
+                            } catch (err) {
+                              alert("Failed to set birthdate: " + err.message);
+                            }
+                          }
+                        }}
+                        className="text-xs font-sans p-1 border border-surface-container rounded bg-surface text-on-background"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Referral Code & Share Link */}
+              <div className="flex items-start space-x-3 border-b border-surface-container/30 pb-2">
+                <Gift className="w-4 h-4 text-primary shrink-0 mt-1" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <span className="block text-[9px] font-sans tracking-widest uppercase text-outline">Referral Code & Link</span>
+                  <div className="flex items-center justify-between gap-2 bg-surface p-2 border border-surface-container">
+                    <span className="text-xs font-mono font-bold text-primary truncate">{user.referral_code || '---'}</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyReferral}
+                      className="bg-primary text-white text-[9px] font-sans uppercase tracking-widest px-2.5 py-1 font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      {copiedRef ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedRef ? 'Copied!' : 'Copy Link'}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <form onSubmit={handleSaveInfo} className="space-y-4 text-xs font-sans">
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-outline mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={infoForm.full_name}
+                  onChange={(e) => setInfoForm({ ...infoForm, full_name: e.target.value })}
+                  className="w-full p-2 border border-surface-container text-xs focus:outline-hidden"
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-outline mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  value={infoForm.phone}
+                  onChange={(e) => setInfoForm({ ...infoForm, phone: e.target.value })}
+                  placeholder="+966 5X XXX XXXX"
+                  className="w-full p-2 border border-surface-container text-xs focus:outline-hidden"
+                />
+              </div>
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="flex-1 bg-primary text-white text-[10px] uppercase tracking-widest py-2 font-medium hover:bg-primary-container transition-colors cursor-pointer"
+                >
+                  {savingProfile ? 'Saving...' : 'Save Profile'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingInfo(false)}
+                  className="px-3 border border-surface-container text-[10px] uppercase tracking-widest py-2 hover:bg-surface-container/50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
-        {/* Encrypted Shipping Address Box */}
+        {/* Shipping Address Box */}
         <div className="bg-white border border-surface-container/60 p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-surface-container pb-3">
             <div className="flex items-center space-x-2">
@@ -119,16 +271,12 @@ export default function ProfilePage({ user, onUserUpdate }) {
                 Saved Address
               </h2>
             </div>
-            <span className="flex items-center space-x-1 text-[9px] text-green-700 bg-green-50 px-2 py-0.5 border border-green-200 uppercase font-semibold">
-              <Lock className="w-2.5 h-2.5" />
-              <span>Encrypted</span>
-            </span>
           </div>
 
           {saveSuccess && (
             <div className="flex items-center space-x-2 text-xs text-green-700 bg-green-50 p-2.5 border border-green-200">
               <Check className="w-4 h-4" />
-              <span>Address encrypted and saved!</span>
+              <span>Address saved!</span>
             </div>
           )}
 
@@ -144,7 +292,7 @@ export default function ProfilePage({ user, onUserUpdate }) {
               )}
               <button
                 onClick={() => setIsEditingAddress(true)}
-                className="mt-3 text-[10px] uppercase font-sans tracking-widest text-primary font-bold hover:underline"
+                className="mt-3 text-[10px] uppercase font-sans tracking-widest text-primary font-bold hover:underline cursor-pointer"
               >
                 {user.address ? 'Edit Address' : '+ Add Saved Address'}
               </button>
@@ -199,14 +347,14 @@ export default function ProfilePage({ user, onUserUpdate }) {
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="flex-1 bg-primary text-white text-[10px] uppercase tracking-widest py-2 font-medium hover:bg-primary-container transition-colors"
+                  className="flex-1 bg-primary text-white text-[10px] uppercase tracking-widest py-2 font-medium hover:bg-primary-container transition-colors cursor-pointer"
                 >
-                  {savingProfile ? 'Encrypting...' : 'Save & Encrypt'}
+                  {savingProfile ? 'Saving...' : 'Save Address'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsEditingAddress(false)}
-                  className="px-3 border border-surface-container text-[10px] uppercase tracking-widest py-2 hover:bg-surface-container/50 transition-colors"
+                  className="px-3 border border-surface-container text-[10px] uppercase tracking-widest py-2 hover:bg-surface-container/50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, Eye, X, User, Phone, Mail, MapPin, Calendar, Package } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import Pagination from '@/shared/components/Pagination';
@@ -7,6 +8,7 @@ import { formatPrice } from '@/shared/utils/currency';
 const PAGE_SIZE = 12;
 
 export default function OrdersAdmin() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,7 +90,7 @@ export default function OrdersAdmin() {
               {paginatedOrders.map((o) => (
                 <tr 
                   key={o.id} 
-                  onClick={() => setSelectedOrder(o)}
+                  onClick={() => navigate(`/admin/orders/${o.id}`)}
                   className="border-b border-surface-container/60 hover:bg-surface-container/20 transition-colors cursor-pointer"
                 >
                   <td className="p-4 font-bold text-on-background">#{o.id}</td>
@@ -110,16 +112,16 @@ export default function OrdersAdmin() {
                   <td className="p-4 text-center">
                     <div className="flex items-center justify-center space-x-2">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedOrder(o); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/orders/${o.id}`); }}
                         className="p-1.5 text-outline hover:text-primary transition-colors"
-                        title="View Details"
+                        title="View Full Details Page"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       {o.status === 'pending' && (
                         <button 
                           onClick={(e) => handleComplete(o.id, e)}
-                          className="bg-primary hover:bg-primary-container text-white text-[10px] font-sans tracking-widest uppercase px-3 py-1 flex items-center space-x-1 font-medium"
+                          className="bg-primary hover:bg-primary-container text-white text-[10px] font-sans tracking-widest uppercase px-3 py-1 flex items-center space-x-1 font-medium cursor-pointer"
                         >
                           <Check className="w-3 h-3" />
                           <span>Complete</span>
