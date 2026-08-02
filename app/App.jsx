@@ -39,6 +39,7 @@ import OrdersAdmin from '@/features/admin/components/OrdersAdmin';
 import OrderDetailAdmin from '@/features/admin/components/OrderDetailAdmin';
 import SettingsAdmin from '@/features/admin/components/SettingsAdmin';
 import TiersManager from '@/features/admin/components/TiersManager';
+import TierFormAdmin from '@/features/admin/components/TierFormAdmin';
 import DonationsManager from '@/features/admin/components/DonationsManager';
 import GiftCardsManager from '@/features/admin/components/GiftCardsManager';
 import AdminVouchersManager from '@/features/vouchers/components/AdminVouchersManager';
@@ -272,6 +273,8 @@ function AppContent() {
                 <Route path="/admin/categories" element={<CategoriesAdmin />} />
                 <Route path="/admin/users" element={<UsersAdmin />} />
                 <Route path="/admin/tiers" element={<TiersManager />} />
+                <Route path="/admin/tiers/new" element={<TierFormAdmin mode="create" />} />
+                <Route path="/admin/tiers/:id/edit" element={<TierFormAdmin mode="edit" />} />
                 <Route path="/admin/donations" element={<DonationsManager />} />
                 <Route path="/admin/gift-cards" element={<GiftCardsManager />} />
                 <Route path="/admin/vouchers" element={<AdminVouchersManager />} />
