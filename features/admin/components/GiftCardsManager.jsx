@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import { Gift, Plus, Copy, Check } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
+import Pagination from '@/shared/components/Pagination';
+
+const PAGE_SIZE = 12;
 
 export default function GiftCardsManager() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [value, setValue] = useState('');
   const [expiryMonths, setExpiryMonths] = useState('');
   const [creating, setCreating] = useState(false);
@@ -160,61 +164,71 @@ export default function GiftCardsManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container/60">
-                {cards.map((card) => {
-                  const isExpired = card.expires_at && new Date(card.expires_at) < new Date();
-                  return (
-                    <tr key={card.id || card.code} className="hover:bg-surface-container/20 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-primary tracking-wider">
-                        {card.code}
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-on-background">
-                        {formatPrice(card.value)}
-                      </td>
-                      <td className="py-3 px-4">
-                        {card.is_redeemed ? (
-                          <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-slate-100 text-slate-700 border border-slate-300">
-                            Redeemed
-                          </span>
-                        ) : isExpired ? (
-                          <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-red-50 text-red-700 border border-red-200">
-                            Expired
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-green-50 text-green-700 border border-green-200">
-                            Active
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-outline font-mono text-[11px]">
-                        {card.expires_at ? new Date(card.expires_at).toLocaleDateString() : '---'}
-                      </td>
-                      <td className="py-3 px-4 text-outline font-mono text-[11px]">
-                        {card.redeemed_at ? new Date(card.redeemed_at).toLocaleDateString() : '---'}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => copyCode(card.code)}
-                          className="p-1.5 text-outline hover:text-primary hover:bg-surface-container rounded transition-colors cursor-pointer inline-flex items-center space-x-1"
-                          title="Copy Code"
-                        >
-                          {copiedCode === card.code ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-green-600" />
-                              <span className="text-[10px] text-green-600 font-bold">Copied</span>
-                            </>
+                {(() => {
+                  const paginatedCards = cards.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+                  return paginatedCards.map((card) => {
+                    const isExpired = card.expires_at && new Date(card.expires_at) < new Date();
+                    return (
+                      <tr key={card.id || card.code} className="hover:bg-surface-container/20 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-primary tracking-wider">
+                          {card.code}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-on-background">
+                          {formatPrice(card.value)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {card.is_redeemed ? (
+                            <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-slate-100 text-slate-700 border border-slate-300">
+                              Redeemed
+                            </span>
+                          ) : isExpired ? (
+                            <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-red-50 text-red-700 border border-red-200">
+                              Expired
+                            </span>
                           ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span className="text-[10px]">Copy</span>
-                            </>
+                            <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-green-50 text-green-700 border border-green-200">
+                              Active
+                            </span>
                           )}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                        <td className="py-3 px-4 text-outline font-mono text-[11px]">
+                          {card.expires_at ? new Date(card.expires_at).toLocaleDateString() : '---'}
+                        </td>
+                        <td className="py-3 px-4 text-outline font-mono text-[11px]">
+                          {card.redeemed_at ? new Date(card.redeemed_at).toLocaleDateString() : '---'}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => copyCode(card.code)}
+                            className="p-1.5 text-outline hover:text-primary hover:bg-surface-container rounded transition-colors cursor-pointer inline-flex items-center space-x-1"
+                            title="Copy Code"
+                          >
+                            {copiedCode === card.code ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-green-600" />
+                                <span className="text-[10px] text-green-600 font-bold">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span className="text-[10px]">Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
+            {Math.ceil(cards.length / PAGE_SIZE) > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(cards.length / PAGE_SIZE)}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         )}
       </div>

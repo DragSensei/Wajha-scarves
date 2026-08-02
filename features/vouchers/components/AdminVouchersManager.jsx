@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
+import Pagination from '@/shared/components/Pagination';
 import { Gift, CheckCircle, Clock, PhoneCall, Copy, Check, Filter } from 'lucide-react';
+
+const PAGE_SIZE = 12;
 
 export default function AdminVouchersManager() {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [updatingId, setUpdatingId] = useState(null);
@@ -71,7 +75,10 @@ export default function AdminVouchersManager() {
           {['all', 'pending', 'contacted', 'done'].map((st) => (
             <button
               key={st}
-              onClick={() => setStatusFilter(st)}
+              onClick={() => {
+                setStatusFilter(st);
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-sans uppercase font-bold tracking-wider transition-all cursor-pointer ${
                 statusFilter === st
                   ? 'bg-primary text-white shadow-xs'
@@ -90,8 +97,8 @@ export default function AdminVouchersManager() {
         </div>
       )}
 
-      {/* Vouchers Table */}
-      <div className="bg-white border border-surface-container rounded-2xl p-6 shadow-xs space-y-4">
+      {/* Table */}
+      <div className="bg-white border border-surface-container rounded-xl overflow-hidden shadow-xs">
         {loading ? (
           <div className="text-xs text-outline py-12 text-center font-sans">Loading voucher orders...</div>
         ) : filteredVouchers.length === 0 ? (
@@ -112,100 +119,110 @@ export default function AdminVouchersManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container/60">
-                {filteredVouchers.map((v) => {
-                  const currentStatus = v.status || 'pending';
-                  const isUpdating = updatingId === v.id;
+                {(() => {
+                  const paginatedVouchers = filteredVouchers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+                  return paginatedVouchers.map((v) => {
+                    const currentStatus = v.status || 'pending';
+                    const isUpdating = updatingId === v.id;
 
-                  return (
-                    <tr key={v.id || v.code} className="hover:bg-surface-container/20 transition-colors">
-                      {/* Code */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-primary tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <span>{v.code}</span>
-                          <button
-                            onClick={() => copyCode(v.code)}
-                            className="p-1 text-outline hover:text-primary transition-colors cursor-pointer"
-                            title="Copy Code"
-                          >
-                            {copiedCode === v.code ? (
-                              <Check className="w-3.5 h-3.5 text-green-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Value */}
-                      <td className="py-3.5 px-4 font-serif font-bold text-on-background">
-                        {formatPrice(v.value)}
-                      </td>
-
-                      {/* Buyer */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold block text-on-background">{v.buyer_email || 'Guest'}</span>
-                      </td>
-
-                      {/* Recipient */}
-                      <td className="py-3.5 px-4">
-                        {v.recipient_name ? (
-                          <div>
-                            <span className="font-semibold block text-on-background">{v.recipient_name}</span>
-                            {v.recipient_email && (
-                              <span className="text-[11px] text-outline block">{v.recipient_email}</span>
-                            )}
+                    return (
+                      <tr key={v.id || v.code} className="hover:bg-surface-container/20 transition-colors">
+                        {/* Code */}
+                        <td className="py-3.5 px-4 font-mono font-bold text-primary tracking-wider">
+                          <div className="flex items-center gap-2">
+                            <span>{v.code}</span>
+                            <button
+                              onClick={() => copyCode(v.code)}
+                              className="p-1 text-outline hover:text-primary transition-colors cursor-pointer"
+                              title="Copy Code"
+                            >
+                              {copiedCode === v.code ? (
+                                <Check className="w-3.5 h-3.5 text-green-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
                           </div>
-                        ) : (
-                          <span className="text-outline italic text-[11px]">Self</span>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Message */}
-                      <td className="py-3.5 px-4 max-w-xs truncate text-outline italic text-[11px]">
-                        {v.gift_message ? `"${v.gift_message}"` : '---'}
-                      </td>
+                        {/* Value */}
+                        <td className="py-3.5 px-4 font-serif font-bold text-on-background">
+                          {formatPrice(v.value)}
+                        </td>
 
-                      {/* Date */}
-                      <td className="py-3.5 px-4 text-outline font-mono text-[11px]">
-                        {v.created_at ? new Date(v.created_at).toLocaleDateString() : '---'}
-                      </td>
+                        {/* Buyer */}
+                        <td className="py-3.5 px-4">
+                          <span className="font-semibold block text-on-background">{v.buyer_email || 'Guest'}</span>
+                        </td>
 
-                      {/* Status Badge */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full border ${
-                            currentStatus === 'pending'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : currentStatus === 'contacted'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-green-50 text-green-700 border-green-200'
-                          }`}
-                        >
-                          {currentStatus === 'pending' && <Clock className="w-3 h-3" />}
-                          {currentStatus === 'contacted' && <PhoneCall className="w-3 h-3" />}
-                          {currentStatus === 'done' && <CheckCircle className="w-3 h-3" />}
-                          <span>{currentStatus}</span>
-                        </span>
-                      </td>
+                        {/* Recipient */}
+                        <td className="py-3.5 px-4">
+                          {v.recipient_name ? (
+                            <div>
+                              <span className="font-semibold block text-on-background">{v.recipient_name}</span>
+                              {v.recipient_email && (
+                                <span className="text-[11px] text-outline block">{v.recipient_email}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-outline italic text-[11px]">Self</span>
+                          )}
+                        </td>
 
-                      {/* Status Action Buttons */}
-                      <td className="py-3.5 px-4 text-right">
-                        <select
-                          disabled={isUpdating}
-                          value={currentStatus}
-                          onChange={(e) => handleStatusChange(v.id, e.target.value)}
-                          className="text-[11px] font-sans font-semibold border border-outline/30 rounded-lg px-2.5 py-1 bg-white text-on-background focus:outline-hidden focus:border-primary cursor-pointer disabled:opacity-50"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="contacted">Contacted</option>
-                          <option value="done">Done</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        {/* Message */}
+                        <td className="py-3.5 px-4 max-w-xs truncate text-outline italic text-[11px]">
+                          {v.gift_message ? `"${v.gift_message}"` : '---'}
+                        </td>
+
+                        {/* Date */}
+                        <td className="py-3.5 px-4 text-outline font-mono text-[11px]">
+                          {v.created_at ? new Date(v.created_at).toLocaleDateString() : '---'}
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full border ${
+                              currentStatus === 'pending'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : currentStatus === 'contacted'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-green-50 text-green-700 border-green-200'
+                            }`}
+                          >
+                            {currentStatus === 'pending' && <Clock className="w-3 h-3" />}
+                            {currentStatus === 'contacted' && <PhoneCall className="w-3 h-3" />}
+                            {currentStatus === 'done' && <CheckCircle className="w-3 h-3" />}
+                            <span>{currentStatus}</span>
+                          </span>
+                        </td>
+
+                        {/* Status Action Buttons */}
+                        <td className="py-3.5 px-4 text-right">
+                          <select
+                            disabled={isUpdating}
+                            value={currentStatus}
+                            onChange={(e) => handleStatusChange(v.id, e.target.value)}
+                            className="text-[11px] font-sans font-semibold border border-outline/30 rounded-lg px-2.5 py-1 bg-white text-on-background focus:outline-hidden focus:border-primary cursor-pointer disabled:opacity-50"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="done">Done</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
+            {Math.ceil(filteredVouchers.length / PAGE_SIZE) > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(filteredVouchers.length / PAGE_SIZE)}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         )}
       </div>

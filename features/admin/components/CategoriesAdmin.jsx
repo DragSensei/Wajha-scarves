@@ -4,7 +4,7 @@ import { api } from '@/shared/lib/api';
 import Pagination from '@/shared/components/Pagination';
 import Combobox from '@/shared/components/Combobox';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 export default function CategoriesAdmin() {
   const [activeTab, setActiveTab] = useState('subcategories'); // 'groups' | 'subcategories'

@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import { HeartHandshake, CheckCircle, Clock, AlertTriangle, Save, DollarSign } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatPrice } from '@/shared/utils/currency';
+import Pagination from '@/shared/components/Pagination';
+
+const PAGE_SIZE = 12;
 
 export default function DonationsManager() {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState('');
   const [status, setStatus] = useState('pending');
@@ -224,30 +228,40 @@ export default function DonationsManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container/60">
-                {history.map((record) => (
-                  <tr key={record.id || record.period} className="hover:bg-surface-container/20 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-on-background">
-                      {record.period}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded ${
-                        record.status === 'donated'
-                          ? 'bg-green-100 text-green-800 border border-green-200'
-                          : 'bg-amber-100 text-amber-800 border border-amber-200'
-                      }`}>
-                        {record.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-outline font-mono text-[11px]">
-                      {record.donated_at ? new Date(record.donated_at).toLocaleDateString() : '---'}
-                    </td>
-                    <td className="py-3 px-4 text-on-background">
-                      {record.note || <span className="text-outline italic">No note attached</span>}
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const paginatedHistory = history.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+                  return paginatedHistory.map((record) => (
+                    <tr key={record.id || record.period} className="hover:bg-surface-container/20 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-on-background">
+                        {record.period}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded ${
+                          record.status === 'donated'
+                            ? 'bg-green-100 text-green-800 border border-green-200'
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {record.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-outline font-mono text-[11px]">
+                        {record.donated_at ? new Date(record.donated_at).toLocaleDateString() : '---'}
+                      </td>
+                      <td className="py-3 px-4 text-on-background">
+                        {record.note || <span className="text-outline italic">No note attached</span>}
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
+            {Math.ceil(history.length / PAGE_SIZE) > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(history.length / PAGE_SIZE)}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         )}
       </div>

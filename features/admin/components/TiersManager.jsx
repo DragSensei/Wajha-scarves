@@ -4,6 +4,9 @@ import { Crown, Plus, Edit, Trash2, Users, Award, Search, X, AlertCircle, Eye } 
 import { api } from '@/shared/lib/api';
 import { formatRawPrice } from '@/shared/utils/currency';
 import LoyaltyTierCard from '@/shared/components/LoyaltyTierCard';
+import Pagination from '@/shared/components/Pagination';
+
+const PAGE_SIZE = 12;
 
 export default function TiersManager() {
   const navigate = useNavigate();
@@ -12,6 +15,8 @@ export default function TiersManager() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [currentPageTiers, setCurrentPageTiers] = useState(1);
+  const [currentPageUsers, setCurrentPageUsers] = useState(1);
 
   // Search & Filter state for Customer Rankings
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +130,12 @@ export default function TiersManager() {
 
     return matchesSearch && matchesTier;
   });
+
+  const totalPagesTiers = Math.ceil(tiers.length / PAGE_SIZE) || 1;
+  const paginatedTiers = tiers.slice((currentPageTiers - 1) * PAGE_SIZE, currentPageTiers * PAGE_SIZE);
+
+  const totalPagesUsers = Math.ceil(filteredUsers.length / PAGE_SIZE) || 1;
+  const paginatedUsers = filteredUsers.slice((currentPageUsers - 1) * PAGE_SIZE, currentPageUsers * PAGE_SIZE);
 
   return (
     <div className="p-8 max-w-6xl space-y-8">
@@ -247,7 +258,7 @@ export default function TiersManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container/60">
-                {tiers.map((tier) => {
+                {paginatedTiers.map((tier) => {
                   const count = tierUsers.filter(
                     (u) => u.tier && u.tier.id === tier.id
                   ).length;
@@ -289,6 +300,13 @@ export default function TiersManager() {
                 })}
               </tbody>
             </table>
+            {totalPagesTiers > 1 && (
+              <Pagination
+                currentPage={currentPageTiers}
+                totalPages={totalPagesTiers}
+                onPageChange={setCurrentPageTiers}
+              />
+            )}
           </div>
         )}
       </div>
@@ -308,7 +326,10 @@ export default function TiersManager() {
                 type="text"
                 placeholder="Search name or email..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPageUsers(1);
+                }}
                 className="pl-9 pr-3 py-1.5 text-xs font-sans bg-surface border border-outline/30 rounded focus:outline-hidden focus:border-primary text-on-background"
               />
             </div>
@@ -316,7 +337,10 @@ export default function TiersManager() {
             {/* Filter by Tier */}
             <select
               value={filterTier}
-              onChange={(e) => setFilterTier(e.target.value)}
+              onChange={(e) => {
+                setFilterTier(e.target.value);
+                setCurrentPageUsers(1);
+              }}
               className="py-1.5 px-3 text-xs font-sans bg-surface border border-outline/30 rounded focus:outline-hidden text-on-background"
             >
               <option value="ALL">All Tiers</option>
@@ -346,10 +370,10 @@ export default function TiersManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container/60">
-                {filteredUsers.map((user, idx) => (
+                {paginatedUsers.map((user, idx) => (
                   <tr key={user.id} className="hover:bg-surface-container/20 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold text-outline">
-                      #{idx + 1}
+                      #{(currentPageUsers - 1) * PAGE_SIZE + idx + 1}
                     </td>
                     <td className="py-3 px-4 font-medium text-on-background">
                       {user.full_name || 'Anonymous Customer'}
@@ -373,6 +397,13 @@ export default function TiersManager() {
                 ))}
               </tbody>
             </table>
+            {totalPagesUsers > 1 && (
+              <Pagination
+                currentPage={currentPageUsers}
+                totalPages={totalPagesUsers}
+                onPageChange={setCurrentPageUsers}
+              />
+            )}
           </div>
         )}
       </div>
