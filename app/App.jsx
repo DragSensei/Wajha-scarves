@@ -87,7 +87,7 @@ function AppContent() {
   // On Startup: Init CSRF token and fetch logged-in user profile
   useEffect(() => {
     api.initCsrf().then(() => {
-      api.getMe()
+      api.getMe({ silent: true })
         .then((data) => {
           if (data && data.user) {
             setUser(data.user);

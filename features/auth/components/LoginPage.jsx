@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '@/shared/lib/api';
 
 export default function LoginPage({ onLoginSuccess }) {
@@ -85,6 +85,13 @@ export default function LoginPage({ onLoginSuccess }) {
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
+
+      <div className="text-center mt-6">
+        <span className="text-xs text-outline font-sans">Don't have an account? </span>
+        <Link to="/register" className="text-xs text-primary font-bold hover:underline">
+          Create Account
+        </Link>
+      </div>
     </div>
   );
 }

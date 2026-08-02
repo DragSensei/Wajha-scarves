@@ -294,7 +294,7 @@ export const api = {
   },
 
   async getMe(options = {}) {
-    return await request('/auth/me', options);
+    return await request('/auth/me', { silent: true, ...options });
   },
 
 
