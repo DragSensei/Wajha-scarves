@@ -1,4 +1,4 @@
-from api.core.models import Category
+from api.core.models import Category, CategoryGroup
 from api.core.db import db
 
 def is_descendant(parent_id: int, child_id: int) -> bool:
@@ -24,17 +24,41 @@ def is_descendant(parent_id: int, child_id: int) -> bool:
         
     return False
 
+def serialize_category_group(group) -> dict:
+    """
+    Serializes a CategoryGroup (Parent Category) model to a dictionary.
+    """
+    return {
+        'id': group.id,
+        'name': group.name,
+        'slug': group.slug,
+        'description': group.description,
+        'categories': [
+            {
+                'id': c.id,
+                'name': c.name,
+                'slug': c.slug,
+                'description': c.description
+            }
+            for c in group.categories
+        ]
+    }
+
 def serialize_category(category) -> dict:
     """
     Serializes a Category model to a dictionary.
-    Includes immediate child categories in the 'children' list.
+    Includes group_id, group_name, and children.
     """
+    group_name = category.group.name if category.group else (category.parent.name if category.parent else None)
     return {
         'id': category.id,
         'name': category.name,
         'slug': category.slug,
         'description': category.description,
+        'group_id': category.group_id,
+        'group_name': group_name,
         'parent_id': category.parent_id,
+        'parent_name': category.parent.name if category.parent else None,
         'children': [
             {
                 'id': child.id,

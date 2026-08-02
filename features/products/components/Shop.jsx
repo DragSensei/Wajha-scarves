@@ -14,6 +14,7 @@ export default function Shop({ onAddToCart }) {
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [categoryGroups, setCategoryGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [wishlist, setWishlist] = useState(getWishlist);
@@ -44,18 +45,23 @@ export default function Shop({ onAddToCart }) {
   useEffect(() => {
     Promise.all([
       api.getProducts(selectedCategory, searchQuery),
-      api.getCategories()
-    ]).then(([productsData, categoriesData]) => {
+      api.getCategories(),
+      api.getCategoryGroups()
+    ]).then(([productsData, categoriesData, groupsData]) => {
       setProducts(productsData);
-      setCategories(categoriesData);
+      setCategories(categoriesData || []);
+      setCategoryGroups(groupsData || []);
       setLoading(false);
     });
   }, [selectedCategory, searchQuery]);
 
+  const activeGroup = categoryGroups.find(g => g.slug === selectedCategory);
   const activeCategory = categories.find(c => c.slug === selectedCategory);
-  let heroTitle = activeCategory ? activeCategory.name : "The Luminous Collection";
-  let heroDescription = activeCategory && activeCategory.description 
-    ? activeCategory.description 
+  const currentItem = activeGroup || activeCategory;
+
+  let heroTitle = currentItem ? currentItem.name : "The Luminous Collection";
+  let heroDescription = currentItem && currentItem.description 
+    ? currentItem.description 
     : "Inspired by the spiritual concept of 'An-Nur' (The Light). Our editorial collection wraps you in serene luxury, featuring premium lightweight fabrics and elegant drapes.";
 
   if (searchQuery) {
@@ -90,9 +96,32 @@ export default function Shop({ onAddToCart }) {
         )}
       </div>
 
-
-
-      {/* Products Grid */}
+      {/* Subcategory Filter Bar */}
+      {activeGroup ? (
+        activeGroup.categories && activeGroup.categories.length > 0 && (
+          <div className="-mt-10 mb-12 flex flex-wrap justify-center items-center gap-2 text-xs font-sans">
+            <span className="text-outline uppercase text-[10px] tracking-widest font-bold mr-1">Subcategories:</span>
+            {activeGroup.categories.map((sub) => (
+              <Link
+                key={sub.id}
+                to={`/category/${sub.slug}`}
+                className="px-3 py-1.5 rounded-full border border-surface-container bg-white text-on-background hover:bg-primary hover:text-white transition-colors font-medium"
+              >
+                {sub.name}
+              </Link>
+            ))}
+          </div>
+        )
+      ) : activeCategory && activeCategory.group_id ? (
+        <div className="-mt-10 mb-12 flex flex-wrap justify-center items-center gap-2 text-xs font-sans">
+          <Link 
+            to={`/category/${categoryGroups.find(g => g.id === activeCategory.group_id)?.slug || ''}`}
+            className="text-outline hover:text-primary transition-colors flex items-center gap-1 font-semibold uppercase tracking-wider"
+          >
+            ← Back to {activeCategory.group_name || 'Parent Group'}
+          </Link>
+        </div>
+      ) : null}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-8 gap-y-12">
           {[...Array(8)].map((_, i) => (

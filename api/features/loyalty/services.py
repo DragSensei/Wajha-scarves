@@ -75,10 +75,17 @@ def convert_points_to_voucher(user_id):
     status = get_user_loyalty_status(user_id)
     points_balance = status['points_balance']
 
-    try:
-        points_to_egp_rate = float(Setting.get_setting('points_to_egp_rate', '10'))
-    except (ValueError, TypeError):
-        points_to_egp_rate = 10.0
+    user_tier = get_user_tier(user_id)
+    tier_features = (user_tier.features if user_tier and isinstance(user_tier.features, dict) else {})
+    
+    # Tier specifies conversion rate (e.g., 'egp_per_point': 0.01 or 'points_to_egp_rate': 100)
+    if 'egp_per_point' in tier_features:
+        egp_per_point = _parse_feature_number(tier_features.get('egp_per_point'), default=0.01)
+        points_to_egp_rate = (1.0 / egp_per_point) if egp_per_point > 0 else 100.0
+    elif 'points_to_egp_rate' in tier_features:
+        points_to_egp_rate = _parse_feature_number(tier_features.get('points_to_egp_rate'), default=100.0)
+    else:
+        points_to_egp_rate = 100.0
 
     try:
         voucher_expiry_months = int(Setting.get_setting('voucher_expiry_months', '1'))
@@ -175,7 +182,12 @@ def reconcile_order_loyalty():
         ).first()
 
         if not existing:
-            earned_points = int((order.total_amount or 0) * points_per_egp)
+            user_tier = get_user_tier(order.user_id)
+            tier_features = (user_tier.features if user_tier and isinstance(user_tier.features, dict) else {})
+            earn_rate_str = tier_features.get('earn_rate')
+            user_rate = _parse_feature_number(earn_rate_str, default=points_per_egp) if earn_rate_str else points_per_egp
+            earned_points = int((order.total_amount or 0) * (user_rate if user_rate > 0 else points_per_egp))
+
             if earned_points > 0:
                 expires_at = now + timedelta(days=points_expiry_months * 30)
                 entry = LoyaltyPointsEntry(
@@ -248,6 +260,92 @@ def reconcile_order_loyalty():
         raise
 
 
+def _parse_feature_number(val_str, default=0.0):
+    if val_str is None:
+        return default
+    if isinstance(val_str, (int, float)):
+        return float(val_str)
+    if not isinstance(val_str, str):
+        return default
+    cleaned = val_str.replace(',', '').strip()
+    import re
+    match = re.search(r'(\d+(?:\.\d+)?)', cleaned)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            return default
+    return default
+
+
+def get_user_tier(user_id):
+    completed_spend = db.session.query(func.coalesce(func.sum(Order.total_amount), 0.0)).filter(
+        Order.user_id == user_id,
+        Order.status == 'completed'
+    ).scalar() or 0.0
+
+    tiers = MembershipTier.query.order_by(MembershipTier.spend_threshold.desc()).all()
+    for t in tiers:
+        if completed_spend >= t.spend_threshold:
+            return t
+    return None
+
+
+def award_welcome_points(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return
+    tier = get_user_tier(user_id)
+    features = (tier.features if tier and isinstance(tier.features, dict) else {})
+    val = features.get('welcome_points')
+    pts = int(_parse_feature_number(val, default=0))
+    if pts > 0:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        existing = LoyaltyPointsEntry.query.filter_by(
+            user_id=user_id,
+            source='welcome_bonus'
+        ).first()
+        if not existing:
+            try:
+                exp_months = int(Setting.get_setting('points_expiry_months', '6'))
+            except (ValueError, TypeError):
+                exp_months = 6
+            entry = LoyaltyPointsEntry(
+                user_id=user_id,
+                amount=pts,
+                source='welcome_bonus',
+                earned_at=now,
+                expires_at=now + timedelta(days=exp_months * 30)
+            )
+            db.session.add(entry)
+            db.session.commit()
+
+
+def award_review_points(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return
+    tier = get_user_tier(user_id)
+    features = (tier.features if tier and isinstance(tier.features, dict) else {})
+    val = features.get('product_review')
+    pts = int(_parse_feature_number(val, default=100))
+    if pts > 0:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        try:
+            exp_months = int(Setting.get_setting('points_expiry_months', '6'))
+        except (ValueError, TypeError):
+            exp_months = 6
+        entry = LoyaltyPointsEntry(
+            user_id=user_id,
+            amount=pts,
+            source='product_review_bonus',
+            earned_at=now,
+            expires_at=now + timedelta(days=exp_months * 30)
+        )
+        db.session.add(entry)
+        db.session.commit()
+
+
 def issue_birthday_rewards():
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     current_year = now.year
@@ -259,7 +357,6 @@ def issue_birthday_rewards():
     except (ValueError, TypeError):
         voucher_expiry_months = 1
 
-    # Users with matching birth_date month & day
     all_users = User.query.filter(User.birth_date.isnot(None)).all()
     birthday_users = [
         u for u in all_users
@@ -268,7 +365,6 @@ def issue_birthday_rewards():
 
     rewarded_count = 0
     for user in birthday_users:
-        # Check if already received a birthday voucher this year
         start_of_year = datetime(current_year, 1, 1)
         existing = LoyaltyVoucher.query.filter(
             LoyaltyVoucher.user_id == user.id,
@@ -277,16 +373,39 @@ def issue_birthday_rewards():
         ).first()
 
         if not existing:
-            bday_voucher = LoyaltyVoucher(
-                user_id=user.id,
-                value=100.0,
-                source='birthday_bonus',
-                expires_at=now + timedelta(days=voucher_expiry_months * 30),
-                redeemed=False,
-                min_order_amount=0.0
-            )
-            db.session.add(bday_voucher)
-            rewarded_count += 1
+            tier = get_user_tier(user.id)
+            features = (tier.features if tier and isinstance(tier.features, dict) else {})
+            bday_val = features.get('birthday_reward')
+            bday_amount = _parse_feature_number(bday_val, default=100.0)
+
+            if bday_amount > 0:
+                # Issue as points or voucher depending on threshold
+                bday_voucher = LoyaltyVoucher(
+                    user_id=user.id,
+                    value=bday_amount if bday_amount <= 1000 else 100.0,
+                    source='birthday_bonus',
+                    expires_at=now + timedelta(days=voucher_expiry_months * 30),
+                    redeemed=False,
+                    min_order_amount=0.0
+                )
+                db.session.add(bday_voucher)
+
+                # If large pts specified in tier (e.g. 8000 pts), also issue points entry
+                if bday_amount > 100:
+                    try:
+                        exp_m = int(Setting.get_setting('points_expiry_months', '6'))
+                    except (ValueError, TypeError):
+                        exp_m = 6
+                    entry = LoyaltyPointsEntry(
+                        user_id=user.id,
+                        amount=int(bday_amount),
+                        source='birthday_bonus',
+                        earned_at=now,
+                        expires_at=now + timedelta(days=exp_m * 30)
+                    )
+                    db.session.add(entry)
+
+                rewarded_count += 1
 
     try:
         db.session.commit()

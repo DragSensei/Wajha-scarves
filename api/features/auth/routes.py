@@ -94,6 +94,11 @@ def register():
     try:
         db.session.add(user)
         db.session.commit()
+        try:
+            from api.features.loyalty.services import award_welcome_points
+            award_welcome_points(user.id)
+        except Exception:
+            pass
     except Exception:
         db.session.rollback()
         return jsonify({"error": "Failed to create user."}), 500

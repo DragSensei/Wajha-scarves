@@ -7,6 +7,7 @@ import { syncWishlist } from '@/shared/utils/wishlist';
 import Navbar from '@/shared/components/Navbar';
 import Footer from '@/shared/components/Footer';
 import AboutPage from '@/shared/components/AboutPage';
+import DonationPage from '@/shared/components/DonationPage';
 import NotificationToast from '@/shared/components/NotificationToast';
 
 // Customer Pages
@@ -21,6 +22,8 @@ import ProfilePage from '@/features/auth/components/ProfilePage';
 import BirthdateOnboarding from '@/features/auth/components/BirthdateOnboarding';
 import RewardsPanel from '@/features/loyalty/components/RewardsPanel';
 import OrderConfirmationPage from '@/features/cart/components/OrderConfirmationPage';
+import VoucherPurchasePage from '@/features/vouchers/components/VoucherPurchasePage';
+import MyVouchersList from '@/features/vouchers/components/MyVouchersList';
 
 // Admin Components
 import Sidebar from '@/features/admin/components/Sidebar';
@@ -38,12 +41,22 @@ import SettingsAdmin from '@/features/admin/components/SettingsAdmin';
 import TiersManager from '@/features/admin/components/TiersManager';
 import DonationsManager from '@/features/admin/components/DonationsManager';
 import GiftCardsManager from '@/features/admin/components/GiftCardsManager';
+import AdminVouchersManager from '@/features/vouchers/components/AdminVouchersManager';
 
 
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isCheckoutRoute = location.pathname === '/checkout' || location.pathname === '/order-confirmation';
+
+  // Automatically scroll to top of window and main scroll container on any route navigation
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    const mainContainer = document.querySelector('main');
+    if (mainContainer) {
+      mainContainer.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [location.pathname]);
 
   // State management
   const [cartItems, setCartItems] = useState(() => {
@@ -241,14 +254,14 @@ function AppContent() {
     }
 
     return (
-      <div className="flex bg-background min-h-screen">
+      <div className="flex bg-background h-screen overflow-hidden">
         <Sidebar 
           isCollapsed={isSidebarCollapsed} 
           onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
         />
-        <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col h-screen overflow-hidden">
           <AdminNavbar user={user} onLogout={handleLogout} />
-          <main className="flex-grow bg-surface-container/20 overflow-y-auto">
+          <main className="flex-1 bg-surface-container/20 overflow-y-auto">
             <div key={location.pathname} className="animate-admin-view min-h-full">
               <Routes>
                 <Route path="/admin" element={<Overview />} />
@@ -261,6 +274,7 @@ function AppContent() {
                 <Route path="/admin/tiers" element={<TiersManager />} />
                 <Route path="/admin/donations" element={<DonationsManager />} />
                 <Route path="/admin/gift-cards" element={<GiftCardsManager />} />
+                <Route path="/admin/vouchers" element={<AdminVouchersManager />} />
                 <Route path="/admin/orders" element={<OrdersAdmin />} />
                 <Route path="/admin/orders/:id" element={<OrderDetailAdmin />} />
                 <Route path="/admin/settings" element={<SettingsAdmin />} />
@@ -296,9 +310,12 @@ function AppContent() {
           <Route path="/register" element={<RegisterPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/onboarding/birthdate" element={<BirthdateOnboarding user={user} onUserUpdate={setUser} />} />
           <Route path="/rewards" element={<RewardsPanel user={user} />} />
-          <Route path="/profile" element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" replace />} />
+          <Route path="/vouchers" element={<VoucherPurchasePage user={user} />} />
+          <Route path="/profile" element={user ? <ProfilePage user={user} onUserUpdate={setUser} vouchersElement={<MyVouchersList />} /> : <Navigate to="/login" replace />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/our-story" element={<AboutPage />} />
+          <Route path="/donation" element={<DonationPage />} />
+          <Route path="/donations" element={<DonationPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

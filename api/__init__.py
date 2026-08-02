@@ -101,13 +101,15 @@ def create_app(config_class=Config):
     )
 
     from api.features.loyalty import loyalty_bp
+    from api.features.vouchers import vouchers_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(categories_bp, url_prefix='/api/categories')
     app.register_blueprint(products_bp, url_prefix='/api/products')
     app.register_blueprint(cart_bp, url_prefix='/api/orders') # handles POST /api/orders
     app.register_blueprint(cart_db_bp, url_prefix='/api/cart') # handles cart persistence CRUD
-    app.register_blueprint(loyalty_bp, url_prefix='/api/loyalty')
+    app.register_blueprint(loyalty_bp)
+    app.register_blueprint(vouchers_bp)
     
     app.register_blueprint(admin_users_bp, url_prefix='/api/users')
     app.register_blueprint(admin_settings_bp, url_prefix='/api/settings')

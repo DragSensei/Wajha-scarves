@@ -9,15 +9,16 @@ export default function Footer() {
           <p className="text-xs font-sans leading-relaxed text-outline mb-3">
             A boutique luxury scarf brand dedicated to bringing premium materials, high-fashion modesty, and elegance together.
           </p>
-          <div className="text-[10px] font-sans text-primary/80 bg-primary/5 p-2.5 border border-primary/20">
-            ♥ <strong>Charitable Pledge:</strong> A portion of proceeds from every collection is donated to philanthropic causes.
-          </div>
+          <Link to="/donation" className="block text-[10px] font-sans text-primary/80 bg-primary/5 p-2.5 border border-primary/20 hover:bg-primary/10 transition-colors">
+            ♥ <strong>Charitable Pledge:</strong> A portion of proceeds from every collection is donated to 57357 Hospital & charities. Learn more →
+          </Link>
         </div>
         
         <div>
           <h4 className="text-xs font-sans tracking-widest text-on-background uppercase font-bold mb-4">Account & Rewards</h4>
           <ul className="space-y-2 text-xs font-sans text-outline">
             <li><Link to="/rewards" className="hover:text-primary transition-colors text-primary font-medium">Diya Rewards Club</Link></li>
+            <li><Link to="/vouchers" className="hover:text-primary transition-colors text-primary font-medium">Digital Gift Vouchers</Link></li>
             <li><Link to="/profile" className="hover:text-primary transition-colors">My Profile & Orders</Link></li>
             <li><Link to="/wishlist" className="hover:text-primary transition-colors">Saved Wishlist</Link></li>
             <li><Link to="/our-story" className="hover:text-primary transition-colors">Our Brand Story</Link></li>
@@ -27,6 +28,7 @@ export default function Footer() {
         <div>
           <h4 className="text-xs font-sans tracking-widest text-on-background uppercase font-bold mb-4">Customer Care</h4>
           <ul className="space-y-2 text-xs font-sans text-outline">
+            <li><Link to="/donation" className="hover:text-primary transition-colors text-primary font-medium">57357 Donation & Giving Back</Link></li>
             <li><Link to="/our-story" className="hover:text-primary transition-colors">About Us</Link></li>
             <li><Link to="/rewards" className="hover:text-primary transition-colors">Tier Benefits & Perks</Link></li>
             <li><a href="mailto:support@diyascarves.com" className="hover:text-primary transition-colors">Contact Support</a></li>

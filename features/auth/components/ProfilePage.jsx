@@ -7,7 +7,7 @@ import { formatPrice } from '@/shared/utils/currency';
 
 const PAGE_SIZE = 5;
 
-export default function ProfilePage({ user, onUserUpdate }) {
+export default function ProfilePage({ user, onUserUpdate, vouchersElement }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -362,6 +362,13 @@ export default function ProfilePage({ user, onUserUpdate }) {
             </form>
           )}
         </div>
+
+        {/* My Digital Vouchers Box */}
+        {vouchersElement && (
+          <div className="bg-white border border-surface-container/60 p-6 shadow-sm">
+            {vouchersElement}
+          </div>
+        )}
       </div>
 
       {/* Order history column */}

@@ -163,7 +163,8 @@ def create_tier(data):
     if MembershipTier.query.filter_by(name=name).first():
         raise DuplicateTierError(f"A tier named '{name}' already exists.")
 
-    new_tier = MembershipTier(name=name, spend_threshold=spend_threshold, sort_order=sort_order)
+    features = data.get('features') if isinstance(data.get('features'), dict) else None
+    new_tier = MembershipTier(name=name, spend_threshold=spend_threshold, sort_order=sort_order, features=features)
     db.session.add(new_tier)
     try:
         db.session.commit()
@@ -192,6 +193,8 @@ def update_tier(tier, data):
         tier.spend_threshold = float(data['spend_threshold'])
     if 'sort_order' in data:
         tier.sort_order = int(data['sort_order'])
+    if 'features' in data and isinstance(data['features'], dict):
+        tier.features = data['features']
 
     try:
         db.session.commit()

@@ -19,6 +19,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
       category: 'ENGAGEMENT',
       items: [
         { name: 'Diya Rewards', path: '/rewards', icon: Crown },
+        { name: 'Voucher Orders', path: '/admin/vouchers', icon: Gift },
         { name: 'Donations', path: '/admin/donations', icon: HeartHandshake },
         { name: 'Gift Cards', path: '/admin/gift-cards', icon: Gift },
         { name: 'Membership Tiers', path: '/admin/tiers', icon: Crown },
@@ -33,7 +34,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
   ];
 
   return (
-    <aside className={`bg-white border-r border-surface-container/60 h-screen flex flex-col justify-between transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`bg-white border-r border-surface-container/60 h-screen sticky top-0 shrink-0 flex flex-col justify-between transition-all duration-300 z-20 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className="overflow-y-auto">
         {/* Branding header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-surface-container/60">

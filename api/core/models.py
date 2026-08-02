@@ -3,13 +3,28 @@ from datetime import datetime, timezone
 from api.core.db import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Category Model
+# Category Group Model (Parent Categories like Accessories, Scarves, etc.)
+class CategoryGroup(db.Model):
+    __tablename__ = 'category_groups'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    slug = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    categories = db.relationship('Category', backref=db.backref('group', lazy='selectin'), lazy='selectin')
+
+    def __repr__(self):
+        return f"<CategoryGroup {self.name}>"
+
+# Category Model (Subcategories)
 class Category(db.Model):
     __tablename__ = 'category'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text, nullable=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('category_groups.id', ondelete='SET NULL'), nullable=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -259,14 +274,18 @@ class MembershipTier(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     spend_threshold = db.Column(db.Float, default=0.0)
     sort_order = db.Column(db.Integer, default=0)
+    features = db.Column(db.JSON, nullable=True)
 
     def to_dict(self):
-        return {
+        res = {
             'id': self.id,
             'name': self.name,
             'spend_threshold': self.spend_threshold,
             'sort_order': self.sort_order
         }
+        if self.features is not None:
+            res['features'] = self.features if isinstance(self.features, dict) else {}
+        return res
 
 
 class DonationRecord(db.Model):
@@ -296,6 +315,12 @@ class GiftCard(db.Model):
     redeemed_at = db.Column(db.DateTime, nullable=True)
     expires_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    buyer_email = db.Column(db.String(150), nullable=True)
+    recipient_name = db.Column(db.String(150), nullable=True)
+    recipient_email = db.Column(db.String(150), nullable=True)
+    gift_message = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending', nullable=False)  # 'pending', 'contacted', 'done'
 
     def to_dict(self):
         return {
@@ -305,7 +330,13 @@ class GiftCard(db.Model):
             'is_redeemed': self.is_redeemed,
             'redeemed_at': self.redeemed_at.isoformat() if self.redeemed_at else None,
             'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'buyer_id': self.buyer_id,
+            'buyer_email': self.buyer_email,
+            'recipient_name': self.recipient_name,
+            'recipient_email': self.recipient_email,
+            'gift_message': self.gift_message,
+            'status': self.status or 'pending'
         }
 
 

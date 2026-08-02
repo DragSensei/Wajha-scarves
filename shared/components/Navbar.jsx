@@ -1,21 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingBag, Menu, X, Heart, Crown } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, Heart, Plus, Minus } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { getWishlist } from '@/shared/utils/wishlist';
 
 export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
+  const [categoryGroups, setCategoryGroups] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [wishlistCount, setWishlistCount] = useState(() => getWishlist().length);
   const [isWishlistBouncing, setIsWishlistBouncing] = useState(false);
+  const [expandedKeys, setExpandedKeys] = useState({});
   const location = useLocation();
   const navigate = useNavigate();
 
+  const toggleExpand = (key, e) => {
+    if (e) e.stopPropagation();
+    setExpandedKeys(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   useEffect(() => {
-    api.getCategories().then(setCategories);
+    Promise.all([
+      api.getCategoryGroups(),
+      api.getCategories()
+    ]).then(([groupsData, catsData]) => {
+      setCategoryGroups(groupsData || []);
+      setCategories(catsData || []);
+    });
   }, []);
 
   useEffect(() => {
@@ -199,65 +212,219 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
       />
       {/* Panel */}
       <div 
-        className={`fixed top-0 left-0 bottom-0 z-50 w-80 max-w-full bg-white h-full flex flex-col justify-between p-8 border-r border-surface-container shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 bottom-0 z-50 w-80 max-w-full bg-white h-full flex flex-col justify-between p-6 border-r border-surface-container shadow-2xl transition-transform duration-300 ease-out ${
           isMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div>
-          <div className="flex items-center justify-between mb-10 pb-4 border-b border-surface-container/60">
+        <div className="overflow-y-auto pr-1 flex-1">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-surface-container/60">
             <span className="text-xs font-sans text-outline uppercase tracking-[0.2em]">Explore Collections</span>
             <button onClick={() => setIsMenuOpen(false)} className="text-on-background hover:text-primary transition-colors cursor-pointer focus:outline-hidden">
               <X className="w-5 h-5" />
             </button>
           </div>
           
-          <nav className="flex flex-col space-y-5">
-            <Link 
-              to="/" 
-              onClick={() => setIsMenuOpen(false)}
-              className="text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors py-1 flex justify-between items-center group"
-            >
-              <span>Shop All Collections</span>
-              <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
-            </Link>
-            
-            {categories.map(cat => (
+          <nav className="divide-y divide-surface-container/60 border-t border-b border-surface-container/60">
+            {/* Shop All Collections */}
+            <div className="py-3 px-1">
               <Link 
-                key={cat.id} 
-                to={`/category/${cat.slug}`}
+                to="/" 
                 onClick={() => setIsMenuOpen(false)}
-                className="text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors py-1 flex justify-between items-center group"
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group font-medium"
               >
-                <span>{cat.name}</span>
+                <span>Shop All Collections</span>
                 <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
               </Link>
-            ))}
+            </div>
             
-            <Link 
-              to="/wishlist" 
-              onClick={() => setIsMenuOpen(false)}
-              className="text-xs font-sans tracking-widest text-outline uppercase hover:text-primary transition-colors pt-6 border-t border-surface-container/40 flex justify-between items-center"
-            >
-              <span>Wishlist ({wishlistCount})</span>
-              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-            </Link>
+            {/* Parent Category Groups (e.g. Scarves, Accessories) */}
+            {categoryGroups.map((group) => {
+              const hasChildren = group.categories && group.categories.length > 0;
+              const groupKey = `group-${group.id}`;
+              const isExpanded = !!expandedKeys[groupKey];
 
-            <Link 
-              to="/rewards" 
-              onClick={() => setIsMenuOpen(false)}
-              className="text-xs font-sans tracking-widest text-primary uppercase font-bold hover:text-primary-container transition-colors pt-3 flex justify-between items-center"
-            >
-              <span>Diya Rewards Club</span>
-              <Crown className="w-4 h-4 text-primary" />
-            </Link>
+              return (
+                <div key={groupKey} className="flex flex-col">
+                  {/* Parent Category Header Row */}
+                  <div 
+                    onClick={(e) => hasChildren && toggleExpand(groupKey, e)}
+                    className={`py-3 px-1 flex items-center justify-between group ${hasChildren ? 'cursor-pointer' : ''}`}
+                  >
+                    <span className="relative inline-flex items-center py-0.5 text-sm md:text-base font-serif tracking-wide text-on-background group-hover:text-primary transition-colors font-medium">
+                      <span>{group.name}</span>
+                      <span 
+                        className={`absolute bottom-0 left-0 h-[1.5px] bg-primary transition-all duration-300 ease-out ${
+                          isExpanded ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`} 
+                      />
+                    </span>
 
-            <Link 
-              to="/our-story" 
-              onClick={() => setIsMenuOpen(false)}
-              className="text-xs font-sans tracking-widest text-outline uppercase hover:text-primary transition-colors pt-3"
-            >
-              Our Story
-            </Link>
+                    {hasChildren && (
+                      <span className="p-1 text-on-background/70 group-hover:text-primary transition-transform duration-300">
+                        {isExpanded ? (
+                          <Minus className="w-4 h-4 stroke-[1.5] transition-transform duration-300 rotate-180" />
+                        ) : (
+                          <Plus className="w-4 h-4 stroke-[1.5] transition-transform duration-300 rotate-0" />
+                        )}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Child Subcategories List (Sliding Down + Left-to-Right Slide In Animation) */}
+                  {hasChildren && (
+                    <div 
+                      className={`grid transition-all duration-300 ease-in-out ${
+                        isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden bg-surface-container/10 border-t border-surface-container/40 divide-y divide-surface-container/40">
+                        {group.categories.map((child, index) => (
+                          <Link
+                            key={child.id}
+                            to={`/category/${child.slug}`}
+                            onClick={() => setIsMenuOpen(false)}
+                            style={{ transitionDelay: isExpanded ? `${index * 40}ms` : '0ms' }}
+                            className={`text-xs font-sans text-outline hover:text-primary hover:translate-x-1 transition-all duration-300 ease-out py-2.5 pl-6 pr-2 block font-normal transform ${
+                              isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                            }`}
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Standalone categories not assigned to any group */}
+            {categories
+              .filter((c) => !c.group_id && !c.parent_id && !categoryGroups.some((g) => g.slug === c.slug))
+              .map((cat) => {
+                const hasChildren = cat.children && cat.children.length > 0;
+                const catKey = `cat-${cat.id}`;
+                const isExpanded = !!expandedKeys[catKey];
+
+                if (hasChildren) {
+                  return (
+                    <div key={catKey} className="flex flex-col">
+                      <div 
+                        onClick={(e) => toggleExpand(catKey, e)}
+                        className="py-3 px-1 flex items-center justify-between group cursor-pointer"
+                      >
+                        <span className="relative inline-flex items-center py-0.5 text-sm md:text-base font-serif tracking-wide text-on-background group-hover:text-primary transition-colors font-medium">
+                          <span>{cat.name}</span>
+                          <span 
+                            className={`absolute bottom-0 left-0 h-[1.5px] bg-primary transition-all duration-300 ease-out ${
+                              isExpanded ? 'w-full' : 'w-0 group-hover:w-full'
+                            }`} 
+                          />
+                        </span>
+
+                        <span className="p-1 text-on-background/70 group-hover:text-primary transition-transform duration-300">
+                          {isExpanded ? (
+                            <Minus className="w-4 h-4 stroke-[1.5] transition-transform duration-300 rotate-180" />
+                          ) : (
+                            <Plus className="w-4 h-4 stroke-[1.5] transition-transform duration-300 rotate-0" />
+                          )}
+                        </span>
+                      </div>
+
+                      <div 
+                        className={`grid transition-all duration-300 ease-in-out ${
+                          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                        }`}
+                      >
+                        <div className="overflow-hidden bg-surface-container/10 border-t border-surface-container/40 divide-y divide-surface-container/40">
+                          {cat.children.map((child, index) => (
+                            <Link
+                              key={child.id}
+                              to={`/category/${child.slug}`}
+                              onClick={() => setIsMenuOpen(false)}
+                              style={{ transitionDelay: isExpanded ? `${index * 40}ms` : '0ms' }}
+                              className={`text-xs font-sans text-outline hover:text-primary hover:translate-x-1 transition-all duration-300 ease-out py-2.5 pl-6 pr-2 block font-normal transform ${
+                                isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                              }`}
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={catKey} className="py-3 px-1">
+                    <Link
+                      to={`/category/${cat.slug}`}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="group relative inline-block py-0.5 text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors font-medium"
+                    >
+                      <span>{cat.name}</span>
+                      <span className="absolute bottom-0 left-0 w-0 group-hover:w-full h-[1.5px] bg-primary transition-all duration-300 ease-out" />
+                    </Link>
+                  </div>
+                );
+              })}
+            
+            {/* Additional Links */}
+            <div className="py-3 px-1">
+              <Link 
+                to="/wishlist" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group"
+              >
+                <span>Wishlist ({wishlistCount})</span>
+                <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </Link>
+            </div>
+
+            <div className="py-3 px-1">
+              <Link 
+                to="/rewards" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group"
+              >
+                <span>Diya Rewards Club</span>
+                <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </Link>
+            </div>
+
+            <div className="py-3 px-1">
+              <Link 
+                to="/vouchers" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group font-medium text-gold"
+              >
+                <span>Digital Gift Vouchers</span>
+                <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </Link>
+            </div>
+
+            <div className="py-3 px-1">
+              <Link 
+                to="/our-story" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group"
+              >
+                <span>Our Story</span>
+                <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </Link>
+            </div>
+
+            <div className="py-3 px-1">
+              <Link 
+                to="/donation" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group"
+              >
+                <span>Donation & Giving Back</span>
+                <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </Link>
+            </div>
           </nav>
         </div>
 

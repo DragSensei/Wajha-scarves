@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Crown, Plus, Edit, Trash2, Users, Award, Search, X, AlertCircle } from 'lucide-react';
+import { Crown, Plus, Edit, Trash2, Users, Award, Search, X, AlertCircle, Eye, Info } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { formatRawPrice } from '@/shared/utils/currency';
+import LoyaltyTierCard from '@/shared/components/LoyaltyTierCard';
 
 export default function TiersManager() {
   const [tiers, setTiers] = useState([]);
@@ -13,16 +14,44 @@ export default function TiersManager() {
   // Search & Filter state for Customer Rankings
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTier, setFilterTier] = useState('ALL');
+  const [showPreview, setShowPreview] = useState(true);
+
+  // Default preset 6 tier features
+  const DEFAULT_FEATURES = {
+    welcome_points: '4,000 pts',
+    earn_rate: '1 Point / 1 EGP',
+    birthday_reward: '8,000 pts',
+    product_review: '100 pts',
+    early_access: false,
+    free_shipping: false,
+  };
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTier, setEditingTier] = useState(null); // null for create mode
-  const [formData, setFormData] = useState({ name: '', spend_threshold: 0, sort_order: 0 });
+  const [formData, setFormData] = useState({
+    name: '',
+    spend_threshold: 0,
+    sort_order: 0,
+    features: { ...DEFAULT_FEATURES },
+  });
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState('');
 
   // Delete modal state
   const [deletingTier, setDeletingTier] = useState(null);
+
+  // Lock body scroll when modal is active to prevent backdrop scroll glitches on desktop & mobile
+  useEffect(() => {
+    if (isModalOpen || deletingTier) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen, deletingTier]);
 
   const refetchData = async () => {
     setLoading(true);
@@ -74,10 +103,14 @@ export default function TiersManager() {
   }, []);
 
   const openCreateModal = () => {
-
     setEditingTier(null);
     const nextOrder = tiers.length > 0 ? Math.max(...tiers.map(t => t.sort_order || 0)) + 1 : 1;
-    setFormData({ name: '', spend_threshold: 0, sort_order: nextOrder });
+    setFormData({
+      name: '',
+      spend_threshold: 0,
+      sort_order: nextOrder,
+      features: { ...DEFAULT_FEATURES },
+    });
     setModalError('');
     setIsModalOpen(true);
   };
@@ -88,6 +121,10 @@ export default function TiersManager() {
       name: tier.name || '',
       spend_threshold: tier.spend_threshold || 0,
       sort_order: tier.sort_order || 0,
+      features: {
+        ...DEFAULT_FEATURES,
+        ...(tier.features || {}),
+      },
     });
     setModalError('');
     setIsModalOpen(true);
@@ -110,6 +147,7 @@ export default function TiersManager() {
         name: formData.name,
         spend_threshold: parseFloat(formData.spend_threshold),
         sort_order: parseInt(formData.sort_order, 10),
+        features: formData.features,
       };
 
       if (editingTier) {
@@ -246,6 +284,29 @@ export default function TiersManager() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* SECTION PREVIEW: Customer Loyalty Cards System Preview */}
+      <div className="bg-white border border-surface-container p-6 space-y-4 rounded-lg shadow-xs">
+        <div className="flex items-center justify-between border-b pb-3 border-outline/20">
+          <h2 className="text-sm font-sans font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+            <Eye className="w-4 h-4 text-primary" />
+            <span>Customer Loyalty Cards Design Preview</span>
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowPreview(!showPreview)}
+            className="text-xs font-sans text-outline hover:text-primary cursor-pointer uppercase tracking-wider underline"
+          >
+            {showPreview ? 'Hide Preview' : 'Show Preview'}
+          </button>
+        </div>
+
+        {showPreview && (
+          <div className="bg-[#faf8f5] p-6 rounded-xl border border-[#e8dfd5]">
+            <LoyaltyTierCard tiers={tiers} title="LIVE CUSTOMER TIERS CARD SYSTEM PREVIEW" />
+          </div>
+        )}
       </div>
 
       {/* SECTION A: Membership Tiers CRUD Table */}
@@ -403,74 +464,259 @@ export default function TiersManager() {
 
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-surface-container p-6 max-w-md w-full rounded shadow-lg space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between border-b pb-3 border-outline/20">
-              <h3 className="text-sm font-sans font-bold uppercase tracking-wider text-primary">
-                {editingTier ? 'Edit Membership Tier' : 'Create New Membership Tier'}
-              </h3>
-              <button onClick={closeModal} className="text-outline hover:text-on-background cursor-pointer">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer"
+            onClick={closeModal}
+          />
 
-            {modalError && (
-              <div className="p-3 bg-red-50 text-red-700 border border-red-200 text-xs font-sans rounded">
-                {modalError}
-              </div>
-            )}
-
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
-                  Tier Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Platinum"
-                  className="w-full text-sm font-sans border border-outline/30 rounded px-3 py-2 focus:outline-hidden focus:border-primary"
-                />
+          {/* Centered Modal Container */}
+          <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 flex items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto relative bg-white border border-surface-container p-6 max-w-lg w-full rounded-xl shadow-2xl flex flex-col max-h-[85vh] animate-fadeIn">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b pb-3 border-outline/20 shrink-0">
+                <h3 className="text-sm font-sans font-bold uppercase tracking-wider text-primary">
+                  {editingTier ? 'Edit Membership Tier' : 'Create New Membership Tier'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="text-outline hover:text-on-background cursor-pointer p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
-                  Minimum Spend Threshold (EGP) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={formData.spend_threshold}
-                  onChange={(e) => setFormData({ ...formData, spend_threshold: e.target.value })}
-                  className="w-full text-sm font-sans border border-outline/30 rounded px-3 py-2 focus:outline-hidden focus:border-primary"
-                />
-                <p className="text-[10px] text-outline mt-1">
-                  Minimum lifetime completed order spend required to qualify for this tier.
-                </p>
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+                {modalError && (
+                  <div className="p-3 bg-red-50 text-red-700 border border-red-200 text-xs font-sans rounded">
+                    {modalError}
+                  </div>
+                )}
+
+                <form id="tier-form" onSubmit={handleFormSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                      Tier Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. Platinum"
+                      className="w-full text-sm font-sans border border-outline/30 rounded px-3 py-2 focus:outline-hidden focus:border-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                      Minimum Spend Threshold (EGP) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={formData.spend_threshold}
+                      onChange={(e) => setFormData({ ...formData, spend_threshold: e.target.value })}
+                      className="w-full text-sm font-sans border border-outline/30 rounded px-3 py-2 focus:outline-hidden focus:border-primary"
+                    />
+                    <p className="text-[10px] text-outline mt-1">
+                      Minimum lifetime completed order spend required to qualify for this tier.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                      Sort Order Rank *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      required
+                      value={formData.sort_order}
+                      onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
+                      className="w-full text-sm font-sans border border-outline/30 rounded px-3 py-2 focus:outline-hidden focus:border-primary"
+                    />
+                    <p className="text-[10px] text-outline mt-1">
+                      Numerical hierarchy order (lower numbers represent base tiers, e.g. 1 = Bronze).
+                    </p>
+                  </div>
+
+                  {/* Editable 6 Tier Card Features */}
+                  <div className="border-t pt-4 border-outline/20 space-y-3">
+                    <h4 className="text-xs font-sans font-bold uppercase tracking-wider text-primary">
+                      Configure Tier Features (6 Card Specs)
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                          1. Welcome Points
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.features?.welcome_points || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              features: { ...formData.features, welcome_points: e.target.value },
+                            })
+                          }
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val && !isNaN(Number(val.replace(/,/g, '')))) {
+                              const num = Number(val.replace(/,/g, ''));
+                              setFormData((prev) => ({
+                                ...prev,
+                                features: { ...prev.features, welcome_points: `${num.toLocaleString()} pts` },
+                              }));
+                            }
+                          }}
+                          placeholder="e.g. 4,000 pts or —"
+                          className="w-full text-xs font-sans border border-outline/30 rounded px-2.5 py-1.5 focus:border-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[10px] font-sans tracking-widest uppercase text-outline">
+                            2. Earn Rate Multiplier *
+                          </label>
+                          <div className="group relative cursor-pointer flex items-center">
+                            <Info className="w-3.5 h-3.5 text-primary hover:text-primary-container transition-colors" />
+                            <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-52 p-2.5 bg-slate-900 text-white text-[10px] font-sans rounded-md shadow-xl z-50 leading-relaxed pointer-events-none">
+                              Points multiplier per 1 EGP spent. E.g. 1 = 1 Point/1 EGP, 2 = 2 Points/1 EGP.
+                            </div>
+                          </div>
+                        </div>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0.1"
+                          required
+                          value={
+                            formData.features?.earn_rate !== undefined && formData.features?.earn_rate !== null
+                              ? String(formData.features.earn_rate).match(/(\d+(?:\.\d+)?)/)?.[1] || '1'
+                              : '1'
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              features: { ...prev.features, earn_rate: val },
+                            }));
+                          }}
+                          placeholder="e.g. 1 or 2"
+                          className="w-full text-xs font-sans border border-outline/30 rounded px-2.5 py-1.5 focus:border-primary"
+                        />
+                        <p className="text-[10px] text-outline mt-1 font-mono">
+                          Card Display: {(() => {
+                            const raw = formData.features?.earn_rate;
+                            const match = String(raw || '1').match(/(\d+(?:\.\d+)?)/);
+                            const num = match ? parseFloat(match[1]) : 1;
+                            return `${num} ${num === 1 ? 'Point' : 'Points'} / 1 EGP`;
+                          })()}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                          3. Birthday Reward
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.features?.birthday_reward || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              features: { ...formData.features, birthday_reward: e.target.value },
+                            })
+                          }
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val && !isNaN(Number(val.replace(/,/g, '')))) {
+                              const num = Number(val.replace(/,/g, ''));
+                              setFormData((prev) => ({
+                                ...prev,
+                                features: { ...prev.features, birthday_reward: `${num.toLocaleString()} pts` },
+                              }));
+                            }
+                          }}
+                          placeholder="e.g. 8,000 pts or —"
+                          className="w-full text-xs font-sans border border-outline/30 rounded px-2.5 py-1.5 focus:border-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                          4. Product Review
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.features?.product_review || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              features: { ...formData.features, product_review: e.target.value },
+                            })
+                          }
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (val && !isNaN(Number(val.replace(/,/g, '')))) {
+                              const num = Number(val.replace(/,/g, ''));
+                              setFormData((prev) => ({
+                                ...prev,
+                                features: { ...prev.features, product_review: `${num.toLocaleString()} pts` },
+                              }));
+                            }
+                          }}
+                          placeholder="e.g. 100 pts"
+                          className="w-full text-xs font-sans border border-outline/30 rounded px-2.5 py-1.5 focus:border-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-1">
+                      <label className="flex items-center space-x-2 text-xs font-sans cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.features?.early_access)}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              features: { ...formData.features, early_access: e.target.checked },
+                            })
+                          }
+                          className="rounded border-outline/40 text-primary focus:ring-primary h-4 w-4"
+                        />
+                        <span className="text-on-background font-medium">5. Early Access (✓)</span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 text-xs font-sans cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.features?.free_shipping)}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              features: { ...formData.features, free_shipping: e.target.checked },
+                            })
+                          }
+                          className="rounded border-outline/40 text-primary focus:ring-primary h-4 w-4"
+                        />
+                        <span className="text-on-background font-medium">6. Free Shipping (✓)</span>
+                      </label>
+                    </div>
+                  </div>
+                </form>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
-                  Sort Order Rank *
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={formData.sort_order}
-                  onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
-                  className="w-full text-sm font-sans border border-outline/30 rounded px-3 py-2 focus:outline-hidden focus:border-primary"
-                />
-                <p className="text-[10px] text-outline mt-1">
-                  Numerical hierarchy order (lower numbers represent base tiers, e.g. 1 = Bronze).
-                </p>
-              </div>
-
-              <div className="pt-3 flex justify-end space-x-3 border-t border-outline/20">
+              {/* Fixed Modal Footer */}
+              <div className="pt-3 flex justify-end space-x-3 border-t border-outline/20 shrink-0">
                 <button
                   type="button"
                   onClick={closeModal}
@@ -480,51 +726,58 @@ export default function TiersManager() {
                 </button>
                 <button
                   type="submit"
+                  form="tier-form"
                   disabled={submitting}
-                  className="bg-primary hover:bg-primary-container disabled:opacity-50 text-white text-xs font-sans tracking-widest uppercase px-5 py-2 font-semibold cursor-pointer"
+                  className="bg-primary hover:bg-primary-container disabled:opacity-50 text-white text-xs font-sans tracking-widest uppercase px-5 py-2 font-semibold cursor-pointer rounded"
                 >
                   {submitting ? 'Saving...' : editingTier ? 'Save Changes' : 'Create Tier'}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* DELETE CONFIRMATION MODAL */}
       {deletingTier && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-surface-container p-6 max-w-sm w-full rounded shadow-lg space-y-4">
-            <div className="flex items-center space-x-3 text-red-600">
-              <AlertCircle className="w-6 h-6 flex-shrink-0" />
-              <h3 className="text-sm font-sans font-bold uppercase tracking-wider">
-                Delete Membership Tier?
-              </h3>
-            </div>
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity cursor-pointer"
+            onClick={() => setDeletingTier(null)}
+          />
+          <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 flex items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto relative bg-white border border-surface-container p-6 max-w-sm w-full rounded-xl shadow-2xl space-y-4 animate-fadeIn">
+              <div className="flex items-center space-x-3 text-red-600">
+                <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                <h3 className="text-sm font-sans font-bold uppercase tracking-wider">
+                  Delete Membership Tier?
+                </h3>
+              </div>
 
-            <p className="text-xs font-sans text-on-background">
-              Are you sure you want to delete tier <strong className="font-bold">{deletingTier.name}</strong>?
-              Customers currently assigned to this tier will fall back to their next eligible threshold tier.
-            </p>
+              <p className="text-xs font-sans text-on-background">
+                Are you sure you want to delete tier <strong className="font-bold">{deletingTier.name}</strong>?
+                Customers currently assigned to this tier will fall back to their next eligible threshold tier.
+              </p>
 
-            <div className="flex justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeletingTier(null)}
-                className="px-4 py-2 text-xs font-sans uppercase tracking-wider text-outline hover:text-on-background cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(deletingTier.id)}
-                className="bg-red-600 hover:bg-red-700 text-white text-xs font-sans tracking-widest uppercase px-5 py-2 font-semibold cursor-pointer"
-              >
-                Delete
-              </button>
+              <div className="flex justify-end space-x-3 pt-2 border-t border-outline/20">
+                <button
+                  type="button"
+                  onClick={() => setDeletingTier(null)}
+                  className="px-4 py-2 text-xs font-sans uppercase tracking-wider text-outline hover:text-on-background cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(deletingTier.id)}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-sans tracking-widest uppercase px-5 py-2 font-semibold cursor-pointer rounded"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

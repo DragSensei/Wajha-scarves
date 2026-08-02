@@ -164,7 +164,36 @@ export const api = {
     });
   },
 
-  // Categories
+  // Category Groups (Parent Categories)
+  async getCategoryGroups() {
+    try {
+      return await request('/categories/groups');
+    } catch {
+      return [];
+    }
+  },
+
+  async createCategoryGroup(groupData) {
+    return await request('/categories/groups', {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    });
+  },
+
+  async updateCategoryGroup(id, groupData) {
+    return await request(`/categories/groups/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(groupData),
+    });
+  },
+
+  async deleteCategoryGroup(id) {
+    return await request(`/categories/groups/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Categories (Subcategories)
   async getCategories() {
     try {
       return await request('/categories');
@@ -440,6 +469,31 @@ export const api = {
   async convertLoyaltyPoints() {
     return await request('/loyalty/convert', {
       method: 'POST',
+    });
+  },
+
+  // Vouchers
+  async buyVoucher(voucherData) {
+    return await request('/vouchers/buy', {
+      method: 'POST',
+      body: JSON.stringify(voucherData),
+    });
+  },
+
+  async getMyVouchers() {
+    const data = await request('/vouchers/my-vouchers');
+    return data.vouchers || [];
+  },
+
+  async getAdminVouchers() {
+    const data = await request('/vouchers/admin');
+    return data.vouchers || [];
+  },
+
+  async updateVoucherStatus(id, status) {
+    return await request(`/vouchers/admin/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
     });
   }
 };

@@ -34,10 +34,22 @@ def get_products():
     from sqlalchemy import or_
 
     if category_filter:
-        filter_clause = or_(
-            Category.slug == category_filter,
-            db.and_(Product.category_id == None, Product.category == category_filter)
-        )
+        # ponytail: Check CategoryGroup (parent group) first, then Category (subcategory)
+        from api.core.models import CategoryGroup
+        target_group = CategoryGroup.query.filter_by(slug=category_filter).first()
+        if target_group:
+            cat_ids = [c.id for c in target_group.categories]
+            filter_clause = Product.category_id.in_(cat_ids) if cat_ids else (Product.id == -1)
+        else:
+            target_cat = Category.query.filter_by(slug=category_filter).first()
+            if target_cat:
+                cat_ids = [target_cat.id] + [c.id for c in target_cat.children]
+                filter_clause = Product.category_id.in_(cat_ids)
+            else:
+                filter_clause = or_(
+                    Category.slug == category_filter,
+                    db.and_(Product.category_id == None, Product.category == category_filter)
+                )
         count_query = count_query.outerjoin(Category, Product.category_id == Category.id).filter(filter_clause)
         query = query.outerjoin(Category, Product.category_id == Category.id).filter(filter_clause)
         

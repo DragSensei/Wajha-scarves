@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Upload, Star, Save, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { compressImage } from '@/shared/utils/imageCompressor';
+import Combobox from '@/shared/components/Combobox';
 
 export default function ProductFormAdmin({ mode = 'edit' }) {
   const { id } = useParams();
@@ -26,6 +27,24 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
 
   const [images, setImages] = useState([]);
   const [createdProductId, setCreatedProductId] = useState(isEditMode ? parseInt(id, 10) : null);
+
+  const handleCategoryComboboxChange = async (selectedVal, isNew) => {
+    if (isNew) {
+      try {
+        setSaving(true);
+        const newCat = await api.createCategory({ name: selectedVal });
+        const updatedCats = await api.getCategories();
+        setCategories(updatedCats || []);
+        setFormData((prev) => ({ ...prev, category_id: String(newCat.id) }));
+      } catch (err) {
+        setErrorMsg(err.message || 'Failed to create new category.');
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, category_id: selectedVal ? String(selectedVal) : '' }));
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -290,18 +309,17 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
 
           <div>
             <label className="block text-outline font-semibold uppercase tracking-wider mb-2">Collection Category</label>
-            <select
+            <Combobox
+              options={categories.map((cat) => ({
+                id: cat.id,
+                name: cat.name,
+                parent_name: cat.parent_name
+              }))}
               value={formData.category_id}
-              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-              className="w-full border border-surface-container p-3 text-on-background focus:outline-none focus:border-primary bg-white text-sm"
-            >
-              <option value="">Uncategorized</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+              onChange={handleCategoryComboboxChange}
+              placeholder="Select category or type to create new..."
+              allowCreate={true}
+            />
           </div>
 
           <div>
