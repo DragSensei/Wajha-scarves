@@ -36,11 +36,12 @@ class Config:
         'sale_active', 'discount_active', 'discount_percent', 'custom_sale_text', 
         'discount_categories', 'discount_product_ids', 'whatsapp_number', 
         'contact_number', 'sale_bundle_name', 'owner_whatsapp',
+        'callmebot_enabled', 'callmebot_phone', 'callmebot_apikey',
         'points_per_egp', 'points_to_egp_rate', 'review_bonus_points', 
         'social_follow_bonus_points', 'referral_voucher_amount', 
         'referral_voucher_min_spend', 'referral_min_order_amount', 
         'points_expiry_months', 'voucher_expiry_months',
-        'donation_percentage', 'birthday_reward_amount', 'birthday_reward_min_tier',
+        'donation_percentage', 'birthday_reward_amount', 'birthday_reward_percent', 'birthday_reward_min_tier',
         'birthday_reward_lead_days', 'gift_card_default_expiry_months', 'email_quota_warning_percent'
     }
 

@@ -30,50 +30,42 @@ export default function DonationPage() {
         </p>
       </div>
 
-      {/* Main Content Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Arabic Card */}
-        <div className="bg-white border border-surface-container/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between" dir="rtl">
-          <div>
-            <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
-              <Gift className="w-4 h-4" />
-              <span>رسالتنا باللغة العربية</span>
-            </div>
-            <p className="text-base md:text-lg font-serif text-on-background leading-loose text-justify font-medium">
-              "السكارف اللي هتوصلك.. مش مجرد شياكة وخامة تحبيها، دي شايلة معاها ثواب وضحكة طفل! 💖
-              <br /><br />
-              حبينا نشاركك الخير، وعشان كده خصصنا جزء من أرباح كل أوردر لصالحة مستشفى 57357 والجمعيات الخيرية.
-              <br /><br />
-              يعني كل مرة هتلبسي فيها السكارف بتاعك، افتكري إنك كنتي سبب في رسم أمل ودعم بطل صغير.
-              <br /><br />
-              شكراً إنك جزء من عيلتنا.. وشريكة معانا في الخير. 🌸"
-            </p>
+      {/* Main Content Card - Single Block */}
+      <div className="bg-white border border-surface-container/80 rounded-2xl p-6 sm:p-8 shadow-xs mb-12 space-y-8">
+        {/* Arabic Version (Top) */}
+        <div dir="rtl">
+          <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
+            <Gift className="w-4 h-4" />
+            <span>رسالتنا باللغة العربية</span>
           </div>
-          <div className="mt-6 pt-4 border-t border-surface-container/60 text-xs font-sans text-outline">
-            — عائلة ضياء 💖
-          </div>
+          <p className="text-base md:text-lg font-serif text-on-background leading-loose text-justify font-medium">
+            "السكارف اللي هتوصلك.. مش مجرد شياكة وخامة تحبيها، دي شايلة معاها ثواب وضحكة طفل! 💖
+            <br /><br />
+            حبينا نشاركك الخير، وعشان كده خصصنا جزء من أرباح كل أوردر لصالحة مستشفى 57357 والجمعيات الخيرية.
+            <br /><br />
+            يعني كل مرة هتلبسي فيها السكارف بتاعك، افتكري إنك كنتي سبب في رسم أمل ودعم بطل صغير.
+            <br /><br />
+            شكراً إنك جزء من عيلتنا.. وشريكة معانا في الخير. 🌸"
+          </p>
         </div>
 
-        {/* English Card */}
-        <div className="bg-white border border-surface-container/80 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
-              <Gift className="w-4 h-4" />
-              <span>Our Message in English</span>
-            </div>
-            <p className="text-base md:text-lg font-serif text-on-background leading-relaxed text-left font-medium">
-              "The scarf you receive isn’t just about style and high quality—it carries a continuous reward and a child's bright smile! 💖
-              <br /><br />
-              We wanted to share the goodness with you, which is why a portion of every order’s profit goes directly to support 57357 Children’s Cancer Hospital and local charities.
-              <br /><br />
-              This means every time you wear your scarf, you’ll remember that you were the reason behind bringing hope and supporting a brave little hero.
-              <br /><br />
-              Thank you for being part of our family—and our partner in doing good. 🌸"
-            </p>
+        <div className="border-t border-surface-container/60 my-6"></div>
+
+        {/* English Version (Bottom) */}
+        <div>
+          <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
+            <Gift className="w-4 h-4" />
+            <span>Our Message in English</span>
           </div>
-          <div className="mt-6 pt-4 border-t border-surface-container/60 text-xs font-sans text-outline">
-            — The Diya Family 💖
-          </div>
+          <p className="text-base md:text-lg font-serif text-on-background leading-relaxed text-left font-medium">
+            "The scarf you receive isn’t just about style and high quality—it carries a continuous reward and a child's bright smile! 💖
+            <br /><br />
+            We wanted to share the goodness with you, which is why a portion of every order’s profit goes directly to support 57357 Children’s Cancer Hospital and local charities.
+            <br /><br />
+            This means every time you wear your scarf, you’ll remember that you were the reason behind bringing hope and supporting a brave little hero.
+            <br /><br />
+            Thank you for being part of our family—and our partner in doing good. 🌸"
+          </p>
         </div>
       </div>
 

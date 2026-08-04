@@ -1,5 +1,5 @@
 ---
-name: googlestick code to react converter
+name: googlestick-code-to-react-converter
 description: guidelines and workflows to parse, convert, and integrate Google Stitch HTML/CSS designs into clean, responsive React + Tailwind CSS components.
 ---
 

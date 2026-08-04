@@ -40,6 +40,22 @@ def purchase_voucher(data, buyer_user=None):
     )
     db.session.add(card)
     db.session.commit()
+
+    # ponytail: Dispatch CallMeBot WhatsApp alert to site owner on voucher purchase
+    try:
+        from api.core.utils import send_callmebot_whatsapp
+        voucher_msg = (
+            f"🎁 *NEW GIFT CARD PURCHASED!*\n"
+            f"Voucher Code: {card.code}\n"
+            f"Amount: {card.value:.2f} EGP\n"
+            f"Buyer: {buyer_email}\n"
+            f"Recipient: {recipient_name or 'Self'}\n"
+            f"Message: {gift_message[:100] if gift_message else 'None'}"
+        )
+        send_callmebot_whatsapp(voucher_msg)
+    except Exception:
+        pass
+
     return card
 
 def get_user_vouchers(user_id=None, user_email=None):

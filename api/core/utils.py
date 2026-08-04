@@ -40,11 +40,42 @@ def get_image_url(filename):
     return f"/api/uploads/{filename}"
 
 
-def calculate_discounted_price(product):
+def calculate_discounted_price(product, user=None):
     """
-    Calculates the discounted price of a product based on global sale settings.
-    Ensures non-stacking of discounts, handles edge cases for invalid/negative percentages.
+    Calculates the discounted price of a product based on global sale settings
+    and user birthday discounts (5% off on user's birthday).
     """
+    from flask import request, has_request_context
+    if user is None and has_request_context():
+        user = getattr(request, 'current_user', None)
+        if user is None:
+            try:
+                from api.core.decorators import get_token_from_request, decode_token
+                token = get_token_from_request()
+                if token:
+                    payload = decode_token(token)
+                    uid = payload.get('user_id') or payload.get('sub')
+                    if uid:
+                        from api.core.models import User
+                        from api.core.db import db
+                        user = db.session.get(User, int(uid))
+                        request.current_user = user
+            except Exception:
+                pass
+
+    bday_discount_price = None
+    if user and getattr(user, 'birth_date', None):
+        from datetime import datetime, timezone
+        from api.core.models import Setting
+        today = datetime.now(timezone.utc).date()
+        if user.birth_date.month == today.month and user.birth_date.day == today.day:
+            try:
+                bday_pct = float(Setting.get_setting('birthday_reward_percent', '5'))
+            except (ValueError, TypeError):
+                bday_pct = 5.0
+            if bday_pct > 0:
+                bday_discount_price = product.price * (1.0 - (bday_pct / 100.0))
+
     # ponytail: use Setting.get_many to fetch all discount parameters in a single batch query/cache hit
     from api.core.models import Setting
     keys = ['discount_active', 'discount_percent', 'discount_categories', 'discount_product_ids']
@@ -56,36 +87,37 @@ def calculate_discounted_price(product):
     except ValueError:
         discount_percent = 0
 
-    if discount_percent < 0 or discount_percent > 100:
-        return product.price
+    std_discount_price = product.price
+    if discount_active and discount_percent > 0 and discount_percent <= 100:
+        cats_setting = settings.get('discount_categories') or ''
+        discount_categories = [c.strip() for c in cats_setting.split(',') if c.strip()]
 
-    cats_setting = settings.get('discount_categories') or ''
-    discount_categories = [c.strip() for c in cats_setting.split(',') if c.strip()]
+        ids_setting = settings.get('discount_product_ids') or ''
+        discount_product_ids = [i.strip() for i in ids_setting.split(',') if i.strip()]
 
-    ids_setting = settings.get('discount_product_ids') or ''
-    discount_product_ids = [i.strip() for i in ids_setting.split(',') if i.strip()]
+        prod_category = product.category_ref.slug if product.category_ref else product.category
+        is_category_match = prod_category in discount_categories
+        is_item_match = str(product.id) in discount_product_ids
 
-    if not discount_active or discount_percent <= 0:
-        return product.price
+        if not discount_categories and not discount_product_ids:
+            std_discount_price = product.price * (1.0 - (discount_percent / 100.0))
+        elif is_category_match or is_item_match:
+            std_discount_price = product.price * (1.0 - (discount_percent / 100.0))
 
-    # ponytail: empty target filters mean sale applies globally to all items
-    if not discount_categories and not discount_product_ids:
-        return product.price * (1.0 - (discount_percent / 100.0))
+    prices = [product.price]
+    if std_discount_price < product.price:
+        prices.append(std_discount_price)
+    if bday_discount_price is not None:
+        prices.append(bday_discount_price)
 
-    prod_category = product.category_ref.slug if product.category_ref else product.category
-    is_category_match = prod_category in discount_categories
-    is_item_match = str(product.id) in discount_product_ids
-
-    if is_category_match or is_item_match:
-        return product.price * (1.0 - (discount_percent / 100.0))
-
-    return product.price
+    return min(prices)
 
 
 def serialize_product(product):
     disc_price = calculate_discounted_price(product)
     discounted_price = disc_price if disc_price < product.price else None
     discount_active = discounted_price is not None
+    discount_percent = round((1.0 - (disc_price / product.price)) * 100) if (discount_active and product.price > 0) else 0
 
     primary_image_url = None
     if product.image_filename:
@@ -112,6 +144,7 @@ def serialize_product(product):
         'original_price': product.price,
         'discounted_price': discounted_price,
         'discount_active': discount_active,
+        'discount_percent': discount_percent,
         'primary_image_url': primary_image_url,
         'images': serialized_images,
         'stock': product.stock
@@ -125,4 +158,53 @@ def serialize_product(product):
         res['category'] = product.category
 
     return res
+
+
+def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_override: str = None, sync: bool = False):
+    """
+    # ponytail: CallMeBot WhatsApp notification helper.
+    Dispatches free WhatsApp messages to the site owner via CallMeBot API.
+    Handles Egyptian and international phone numbers cleanly.
+    """
+    import urllib.request
+    import urllib.parse
+    import threading
+
+    def _execute():
+        from api.core.models import Setting
+        enabled = Setting.get_setting('callmebot_enabled', 'false')
+        if not phone_override and str(enabled).lower() not in ('true', '1', 'yes'):
+            return False, "CallMeBot notifications are disabled."
+
+        phone = phone_override or Setting.get_setting('callmebot_phone') or Setting.get_setting('owner_whatsapp')
+        apikey = apikey_override or Setting.get_setting('callmebot_apikey')
+
+        if not phone or not apikey:
+            return False, "Missing phone number or CallMeBot API key."
+
+        # Clean and format phone number
+        raw = str(phone).strip()
+        clean = re.sub(r'[^\d+]', '', raw)
+        if clean.startswith('01') and len(clean) == 11:
+            clean = '+20' + clean[1:]
+        elif clean.startswith('20') and len(clean) == 12:
+            clean = '+' + clean
+
+        try:
+            encoded_text = urllib.parse.quote(message)
+            url = f"https://api.callmebot.com/whatsapp.php?phone={urllib.parse.quote(clean)}&text={encoded_text}&apikey={urllib.parse.quote(str(apikey).strip())}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'DiyaScarves/1.0'})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                body = resp.read().decode('utf-8', errors='ignore')
+                return True, body
+        except Exception as e:
+            return False, str(e)
+
+    if sync:
+        return _execute()
+    
+    # ponytail: dispatch asynchronously so order flow is never delayed by external API
+    thread = threading.Thread(target=_execute, daemon=True)
+    thread.start()
+    return True, "Dispatched"
 

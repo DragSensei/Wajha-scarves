@@ -107,6 +107,13 @@ def api_create_order():
         # Handle Loyalty Voucher Redemption
         voucher_id = data.get('voucher_id')
         applied_voucher = None
+        if not voucher_id and user_id:
+            # ponytail: auto-apply user's unredeemed birthday bonus voucher if present
+            from api.core.models import LoyaltyVoucher
+            auto_v = LoyaltyVoucher.query.filter_by(user_id=user_id, source='birthday_bonus', redeemed=False).first()
+            if auto_v:
+                voucher_id = auto_v.id
+
         if voucher_id:
             from api.core.models import LoyaltyVoucher
             from datetime import datetime, timezone
@@ -118,10 +125,14 @@ def api_create_order():
                     expires = expires.replace(tzinfo=timezone.utc)
                 if now <= expires and total_amount >= (v.min_order_amount or 0):
                     applied_voucher = v
-                    discount_amount += v.value
+                    if v.source == 'birthday_bonus':
+                        v_discount = round(subtotal_amount * (v.value / 100.0 if v.value <= 100 else 0.05), 2)
+                    else:
+                        v_discount = v.value
+                    discount_amount += v_discount
                     voucher_label = f"VOUCHER ({v.source})"
                     applied_voucher_code = f"{applied_voucher_code}, {voucher_label}" if applied_voucher_code else voucher_label
-                    total_amount = max(0.0, total_amount - v.value)
+                    total_amount = max(0.0, total_amount - v_discount)
 
         detailed_name = f"{customer_name} — Ordered: {items_summary[:100]}"
         new_order = Order(
@@ -157,6 +168,21 @@ def api_create_order():
             applied_voucher.redeemed = True
 
         db.session.commit()
+
+        # ponytail: Dispatch CallMeBot WhatsApp alert to site owner
+        try:
+            from api.core.utils import send_callmebot_whatsapp
+            order_msg = (
+                f"🛍️ *NEW ORDER RECEIVED!*\n"
+                f"Order ID: #{new_order.id}\n"
+                f"Customer: {customer_name}\n"
+                f"Phone: {phone or 'N/A'}\n"
+                f"Total: {total_amount:.2f} EGP\n"
+                f"Items: {items_summary[:150]}"
+            )
+            send_callmebot_whatsapp(order_msg)
+        except Exception:
+            pass
 
         # Instantly reconcile loyalty points & referral rewards
         try:

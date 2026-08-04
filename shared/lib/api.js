@@ -321,6 +321,13 @@ export const api = {
     });
   },
 
+  async testCallmebot(phone, apikey) {
+    return await request('/settings/test-callmebot', {
+      method: 'POST',
+      body: JSON.stringify({ phone, apikey }),
+    });
+  },
+
   // Admin Operations
   async getAdminOrders() {
     return await request('/orders');

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Check, Store, Gift, Share2, HeartHandshake } from 'lucide-react';
+import { Save, Check, Store, Gift, Share2, HeartHandshake, MessageSquare, Send, Smartphone, Key } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 
 export default function SettingsAdmin() {
@@ -16,6 +16,10 @@ export default function SettingsAdmin() {
     contact_number: '',
     owner_whatsapp: '',
     sale_bundle_name: '',
+    // CallMeBot WhatsApp Notifications (3)
+    callmebot_enabled: 'false',
+    callmebot_phone: '',
+    callmebot_apikey: '',
     // Loyalty & Points (5)
     points_per_egp: '1',
     points_to_egp_rate: '0.05',
@@ -30,6 +34,7 @@ export default function SettingsAdmin() {
     // Donations & System (6)
     donation_percentage: '5',
     birthday_reward_amount: '150',
+    birthday_reward_percent: '5',
     birthday_reward_min_tier: 'Silver',
     birthday_reward_lead_days: '30',
     gift_card_default_expiry_months: '12',
@@ -41,6 +46,8 @@ export default function SettingsAdmin() {
   const [tiers, setTiers] = useState([]);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [testingBot, setTestingBot] = useState(false);
+  const [botTestResult, setBotTestResult] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -92,6 +99,22 @@ export default function SettingsAdmin() {
       next = [...selectedProductIds, idStr];
     }
     setSettings(prev => ({ ...prev, discount_product_ids: next.join(',') }));
+  };
+
+  const handleTestCallmebot = async () => {
+    setTestingBot(true);
+    setBotTestResult(null);
+    try {
+      const res = await api.testCallmebot(
+        settings.callmebot_phone || settings.owner_whatsapp,
+        settings.callmebot_apikey
+      );
+      setBotTestResult({ success: true, message: res.message || 'Test message sent successfully!' });
+    } catch (err) {
+      setBotTestResult({ success: false, message: err.message || 'Failed to send test message.' });
+    } finally {
+      setTestingBot(false);
+    }
   };
 
   const handleSave = async (e) => {
@@ -267,8 +290,90 @@ export default function SettingsAdmin() {
                   value={settings.owner_whatsapp}
                   onChange={handleChange}
                   className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
+                  placeholder="+201012345678"
                 />
               </div>
+            </div>
+
+            {/* CallMeBot WhatsApp Purchase Alerts */}
+            <div className="mt-6 p-4 rounded-xl bg-surface-variant/20 border border-outline/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-emerald-500" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-on-background">CallMeBot WhatsApp Alerts</h4>
+                    <p className="text-xs text-outline">Receive instant free WhatsApp messages on every item & gift card purchase</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="callmebot_enabled"
+                    checked={settings.callmebot_enabled === 'true'}
+                    onChange={(e) => setSettings(prev => ({ ...prev, callmebot_enabled: e.target.checked ? 'true' : 'false' }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-outline/30 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="border-b border-outline/30 pb-2">
+                  <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1 flex items-center gap-1">
+                    <Smartphone className="w-3 h-3 text-emerald-500" /> Owner WhatsApp Phone Number (e.g. Egyptian +2010...)
+                  </label>
+                  <input
+                    type="text"
+                    name="callmebot_phone"
+                    value={settings.callmebot_phone || settings.owner_whatsapp || ''}
+                    onChange={handleChange}
+                    placeholder="+201012345678 or 01012345678"
+                    className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
+                  />
+                </div>
+
+                <div className="border-b border-outline/30 pb-2">
+                  <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1 flex items-center gap-1">
+                    <Key className="w-3 h-3 text-emerald-500" /> CallMeBot API Key
+                  </label>
+                  <input
+                    type="text"
+                    name="callmebot_apikey"
+                    value={settings.callmebot_apikey || ''}
+                    onChange={handleChange}
+                    placeholder="Enter your CallMeBot API Key (e.g. 1234567)"
+                    className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="text-xs text-outline space-y-1">
+                  <p className="font-medium text-on-background">1-Minute Free Setup:</p>
+                  <ol className="list-decimal list-inside text-[11px] space-y-0.5">
+                    <li>Add <span className="font-mono text-emerald-500">+34 644 20 22 55</span> to your WhatsApp contacts.</li>
+                    <li>Send message: <span className="italic font-mono">I allow callmebot to send me messages</span></li>
+                    <li>Enter the API key received from the bot above.</li>
+                  </ol>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestCallmebot}
+                  disabled={testingBot || !settings.callmebot_apikey}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {testingBot ? 'Sending Test...' : 'Send Test Notification'}
+                </button>
+              </div>
+
+              {botTestResult && (
+                <div className={`p-2.5 rounded-lg text-xs flex items-center gap-2 ${botTestResult.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}`}>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>{botTestResult.message}</span>
+                </div>
+              )}
             </div>
 
             {/* Target Sale Categories */}
@@ -522,6 +627,23 @@ export default function SettingsAdmin() {
                   className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
                 />
                 <p className="text-[10px] text-outline mt-1">Discount voucher amount issued to qualifying customers on their birthday.</p>
+              </div>
+
+              <div className="border-b border-outline/30 pb-2">
+                <label className="block text-[10px] font-sans tracking-widest uppercase text-outline mb-1">
+                  Birthday Reward Discount Percentage (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  name="birthday_reward_percent"
+                  value={settings.birthday_reward_percent || '5'}
+                  onChange={handleChange}
+                  className="w-full text-sm font-sans bg-transparent focus:outline-hidden text-on-background py-1"
+                />
+                <p className="text-[10px] text-outline mt-1">Percentage discount applied to all orders on a customer's birthday.</p>
               </div>
 
               <div className="border-b border-outline/30 pb-2">

@@ -178,6 +178,13 @@ export default function Shop({ onAddToCart }) {
                     ) : null}
                   </Link>
 
+                  {/* Sale Badge Overlay */}
+                  {product.discount_active && (
+                    <div className="absolute top-4 left-4 z-10 bg-rose-600 text-white text-[10px] font-sans font-bold tracking-wider px-2 py-0.5 rounded shadow-xs uppercase">
+                      {product.discount_percent ? `${product.discount_percent}% OFF` : 'SALE'}
+                    </div>
+                  )}
+
                   {/* Wishlist Button Overlay */}
                   <div className="xb-wishlist-button-collection absolute top-4 right-4 z-10">
                     <button 
@@ -218,18 +225,21 @@ export default function Shop({ onAddToCart }) {
                   <h3 className="card__title font-serif text-sm font-semibold text-on-background group-hover:text-primary transition-colors duration-300 mb-2 leading-snug">
                     {product.name}
                   </h3>
-                  <div className="card__price text-xs font-sans text-outline tracking-wider">
+                  <div className="card__price text-xs font-sans tracking-wider">
                     {product.discount_active ? (
                       <div className="flex justify-center items-center space-x-2">
                         <span className="line-through text-[11px] text-outline/70">
                           {formatPrice(product.original_price)}
                         </span>
-                        <span className="font-bold text-primary">
+                        <span className="font-bold text-rose-600">
                           {formatPrice(product.discounted_price)}
+                        </span>
+                        <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1 py-0.2 border border-rose-200 rounded">
+                          {product.discount_percent ? `${product.discount_percent}% OFF` : 'SALE'}
                         </span>
                       </div>
                     ) : (
-                      <span>{formatPrice(product.original_price)}</span>
+                      <span className="text-outline">{formatPrice(product.original_price)}</span>
                     )}
                   </div>
                 </Link>

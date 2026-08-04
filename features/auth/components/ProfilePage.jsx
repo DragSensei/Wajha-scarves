@@ -97,6 +97,23 @@ export default function ProfilePage({ user, onUserUpdate, vouchersElement }) {
     <div className="max-w-4xl mx-auto px-6 py-24 mt-12 grid grid-cols-1 md:grid-cols-3 gap-12">
       {/* Profile details column */}
       <div className="space-y-6 self-start">
+        {/* Birthday Discount Active Alert */}
+        {(user.is_birthday_today || user.has_birthday_discount) && (
+          <div className="p-4 bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-amber-500/15 border border-amber-500/30 shadow-xs flex items-center gap-3">
+            <div className="p-2 bg-amber-600 text-white rounded-lg shrink-0">
+              <Gift className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wide flex items-center gap-1.5">
+                🎉 Birthday Special Activated!
+              </h4>
+              <p className="text-[11px] text-amber-800 font-sans mt-0.5 leading-tight">
+                Enjoy 5% OFF on all items automatically applied today!
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Quick Link to Rewards */}
         <Link
           to="/rewards"

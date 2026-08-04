@@ -7,6 +7,12 @@ from api.core.models import (
 )
 
 def get_user_loyalty_status(user_id):
+    # Automatically issue birthday points and voucher if today is the user's birthday
+    try:
+        issue_birthday_rewards(target_user_id=user_id)
+    except Exception:
+        pass
+
     user = db.session.get(User, user_id)
     if not user:
         raise ValueError("User not found")
@@ -346,72 +352,120 @@ def award_review_points(user_id):
         db.session.commit()
 
 
-def issue_birthday_rewards():
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+def send_birthday_email(email, name, discount_percent=5):
+    """
+    ponytail: minimal birthday email notification sender/logger.
+    """
+    if not email:
+        return False
+    msg = f"[BIRTHDAY EMAIL] To: {email} | Dear {name or 'Valued Customer'}, Happy Birthday! You have received a {discount_percent}% discount on your next order."
+    print(msg)
+    return True
+
+
+def issue_birthday_rewards(target_user_id=None):
+    now_utc = datetime.now(timezone.utc)
+    now_local = datetime.now()
+    now = now_utc.replace(tzinfo=None)
     current_year = now.year
-    today_month = now.month
-    today_day = now.day
+
+    # Check both UTC and local date to handle time zone boundaries robustly
+    valid_dates = {
+        (now_utc.month, now_utc.day),
+        (now_local.month, now_local.day)
+    }
 
     try:
         voucher_expiry_months = int(Setting.get_setting('voucher_expiry_months', '1'))
     except (ValueError, TypeError):
         voucher_expiry_months = 1
 
-    all_users = User.query.filter(User.birth_date.isnot(None)).all()
+    try:
+        points_expiry_months = int(Setting.get_setting('points_expiry_months', '6'))
+    except (ValueError, TypeError):
+        points_expiry_months = 6
+
+    try:
+        bday_pct = float(Setting.get_setting('birthday_reward_percent', '5'))
+    except (ValueError, TypeError):
+        bday_pct = 5.0
+
+    if target_user_id:
+        all_users = User.query.filter(User.id == target_user_id, User.birth_date.isnot(None)).all()
+    else:
+        all_users = User.query.filter(User.birth_date.isnot(None)).all()
+
     birthday_users = [
         u for u in all_users
-        if u.birth_date and u.birth_date.month == today_month and u.birth_date.day == today_day
+        if u.birth_date and (u.birth_date.month, u.birth_date.day) in valid_dates
     ]
 
-    rewarded_count = 0
+    vouchers_issued = 0
+    points_issued = 0
+
     for user in birthday_users:
         start_of_year = datetime(current_year, 1, 1)
-        existing = LoyaltyVoucher.query.filter(
+
+        # 1. Determine tier-specific birthday reward points
+        user_tier = get_user_tier(user.id)
+        bday_pts = 0
+        if user_tier:
+            tier_features = (user_tier.features if isinstance(user_tier.features, dict) else {})
+            if 'birthday_reward' in tier_features:
+                bday_pts = int(_parse_feature_number(tier_features.get('birthday_reward'), default=0))
+
+        if bday_pts == 0:
+            try:
+                bday_pts = int(float(Setting.get_setting('birthday_reward_amount', '150')))
+            except (ValueError, TypeError):
+                bday_pts = 150
+
+        # Issue Birthday Points if not already issued this year
+        existing_points = LoyaltyPointsEntry.query.filter(
+            LoyaltyPointsEntry.user_id == user.id,
+            LoyaltyPointsEntry.source == 'birthday_points',
+            LoyaltyPointsEntry.earned_at >= start_of_year
+        ).first()
+
+        if not existing_points and bday_pts > 0:
+            points_entry = LoyaltyPointsEntry(
+                user_id=user.id,
+                amount=bday_pts,
+                source='birthday_points',
+                earned_at=now,
+                expires_at=now + timedelta(days=points_expiry_months * 30)
+            )
+            db.session.add(points_entry)
+            points_issued += 1
+
+        # 2. Issue Birthday Discount Voucher if not already issued this year
+        existing_voucher = LoyaltyVoucher.query.filter(
             LoyaltyVoucher.user_id == user.id,
             LoyaltyVoucher.source == 'birthday_bonus',
             LoyaltyVoucher.created_at >= start_of_year
         ).first()
 
-        if not existing:
-            tier = get_user_tier(user.id)
-            features = (tier.features if tier and isinstance(tier.features, dict) else {})
-            bday_val = features.get('birthday_reward')
-            bday_amount = _parse_feature_number(bday_val, default=100.0)
+        if not existing_voucher:
+            bday_voucher = LoyaltyVoucher(
+                user_id=user.id,
+                value=bday_pct, # configurable percentage off from settings
+                source='birthday_bonus',
+                expires_at=now + timedelta(days=voucher_expiry_months * 30),
+                redeemed=False,
+                min_order_amount=0.0
+            )
+            db.session.add(bday_voucher)
 
-            if bday_amount > 0:
-                # Issue as points or voucher depending on threshold
-                bday_voucher = LoyaltyVoucher(
-                    user_id=user.id,
-                    value=bday_amount if bday_amount <= 1000 else 100.0,
-                    source='birthday_bonus',
-                    expires_at=now + timedelta(days=voucher_expiry_months * 30),
-                    redeemed=False,
-                    min_order_amount=0.0
-                )
-                db.session.add(bday_voucher)
-
-                # If large pts specified in tier (e.g. 8000 pts), also issue points entry
-                if bday_amount > 100:
-                    try:
-                        exp_m = int(Setting.get_setting('points_expiry_months', '6'))
-                    except (ValueError, TypeError):
-                        exp_m = 6
-                    entry = LoyaltyPointsEntry(
-                        user_id=user.id,
-                        amount=int(bday_amount),
-                        source='birthday_bonus',
-                        earned_at=now,
-                        expires_at=now + timedelta(days=exp_m * 30)
-                    )
-                    db.session.add(entry)
-
-                rewarded_count += 1
+            # Send birthday email notification with configured discount percentage
+            send_birthday_email(user.email, user.full_name, discount_percent=bday_pct)
+            vouchers_issued += 1
 
     try:
         db.session.commit()
         return {
             'birthday_users_found': len(birthday_users),
-            'vouchers_issued': rewarded_count
+            'vouchers_issued': vouchers_issued,
+            'points_entries_created': points_issued
         }
     except Exception:
         db.session.rollback()

@@ -142,11 +142,11 @@ export default function ProductDetails({ onAddToCart }) {
                   <span className="text-base font-sans line-through text-outline">
                     {formatPrice(product.original_price)}
                   </span>
-                  <span className="text-2xl font-sans font-bold text-primary">
+                  <span className="text-2xl font-sans font-bold text-rose-600">
                     {formatPrice(product.discounted_price)}
                   </span>
-                  <span className="bg-primary-container/20 text-primary text-[10px] font-sans tracking-wider uppercase px-3 py-1 font-bold">
-                    Save 15%
+                  <span className="bg-rose-100 text-rose-800 text-[10px] font-sans tracking-wider uppercase px-3 py-1 font-bold rounded border border-rose-200">
+                    Save {product.discount_percent || Math.round((1 - product.discounted_price / product.original_price) * 100)}%
                   </span>
                 </div>
               ) : (

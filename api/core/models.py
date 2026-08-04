@@ -213,6 +213,9 @@ class User(db.Model):
 
     def to_dict(self):
         from api.core.crypto import decrypt_text
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).date()
+        is_bday = bool(self.birth_date and self.birth_date.month == today.month and self.birth_date.day == today.day)
         return {
             "id": self.id,
             "email": self.email,
@@ -226,7 +229,9 @@ class User(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "birth_date": self.birth_date.isoformat() if self.birth_date else None,
             "referral_code": self.referral_code,
-            "referred_by_id": self.referred_by_id
+            "referred_by_id": self.referred_by_id,
+            "is_birthday_today": is_bday,
+            "has_birthday_discount": is_bday
         }
 
 # Cart Item Model

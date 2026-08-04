@@ -208,6 +208,13 @@ def me():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
+
+        try:
+            from api.features.loyalty.services import issue_birthday_rewards
+            issue_birthday_rewards()
+        except Exception:
+            pass
+
         return jsonify({"user": user.to_dict()})
     else:
         return jsonify({"user": user})
@@ -249,6 +256,8 @@ def update_profile():
 
     try:
         db.session.commit()
+        from api.features.loyalty.services import issue_birthday_rewards
+        issue_birthday_rewards()
     except Exception:
         db.session.rollback()
         return jsonify({"error": "Failed to update profile."}), 500

@@ -284,7 +284,7 @@ def update_settings():
         validated_data[key] = value
 
     # Domain validation for settings
-    percentages = {'discount_percent', 'donation_percentage', 'email_quota_warning_percent'}
+    percentages = {'discount_percent', 'donation_percentage', 'email_quota_warning_percent', 'birthday_reward_percent'}
     non_negative_nums = {'points_per_egp', 'points_to_egp_rate', 'review_bonus_points', 
                         'social_follow_bonus_points', 'referral_voucher_amount', 
                         'referral_voucher_min_spend', 'referral_min_order_amount', 'birthday_reward_amount'}
@@ -322,6 +322,27 @@ def update_settings():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@admin_settings_bp.route('/test-callmebot', methods=['POST'])
+@admin_required
+@limiter.limit("10 per minute")
+def test_callmebot_notification():
+    """
+    # ponytail: Send a test WhatsApp message to verify CallMeBot credentials.
+    """
+    data = request.get_json() or {}
+    phone = data.get('phone')
+    apikey = data.get('apikey')
+    
+    from api.core.utils import send_callmebot_whatsapp
+    test_msg = "🧪 *Diya Scarves CallMeBot Test*\nYour WhatsApp notification integration is working perfectly!"
+    success, res = send_callmebot_whatsapp(test_msg, phone_override=phone, apikey_override=apikey, sync=True)
+    
+    if success:
+        return jsonify({'success': True, 'message': 'Test notification sent successfully!', 'response': res})
+    else:
+        return jsonify({'success': False, 'error': res or 'Failed to send test notification'}), 400
 
 
 # ----------------- TIERS ADMIN ROUTES -----------------

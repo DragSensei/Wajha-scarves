@@ -68,9 +68,15 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
   return (
     <>
       {/* Top Notice Banner */}
-      <div className="bg-primary text-white text-[10px] md:text-xs font-sans tracking-widest text-center py-2 px-4 uppercase">
-        Luminous Elegance — 15% off on select collections
-      </div>
+      {user?.is_birthday_today || user?.has_birthday_discount ? (
+        <div className="bg-gradient-to-r from-amber-600 via-rose-500 to-amber-600 text-white text-xs md:text-sm font-sans tracking-widest text-center py-2.5 px-4 font-bold shadow-xs">
+          🎉 HAPPY BIRTHDAY! YOU GET 5% OFF YOUR ENTIRE ORDER TODAY 🎂
+        </div>
+      ) : (
+        <div className="bg-primary text-white text-[10px] md:text-xs font-sans tracking-widest text-center py-2 px-4 uppercase">
+          Luminous Elegance — 15% off on select collections
+        </div>
+      )}
       <header className="sticky top-0 z-40 bg-background border-b border-surface-container/60 h-20 sm:h-24 md:h-28 flex items-center justify-between px-4 sm:px-6 md:px-12 relative">
         {/* Left Side: Clickable Menu Button */}
         <button 

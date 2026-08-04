@@ -53,7 +53,6 @@ export default function CartPage({ isOpen, onClose, cartItems, onUpdateQuantity,
             </div>
           ) : (
             cartItems.map((item) => {
-              const price = item.discount_active ? item.discounted_price : item.original_price;
               return (
                 <div key={item.id} className="flex space-x-4 border-b border-surface-container/40 pb-4">
                   <div className="w-20 h-24 bg-surface-container/40 overflow-hidden border border-surface-container flex-shrink-0">
@@ -64,9 +63,25 @@ export default function CartPage({ isOpen, onClose, cartItems, onUpdateQuantity,
                       <h4 className="text-xs font-serif tracking-wide text-on-background font-medium mb-1">
                         {item.name}
                       </h4>
-                      <p className="text-[10px] font-sans tracking-wider text-outline uppercase mb-2">
-                        {formatPrice(price)}
-                      </p>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {item.discount_active ? (
+                          <>
+                            <span className="text-xs font-sans tracking-wider text-rose-600 font-bold">
+                              {formatPrice(item.discounted_price)}
+                            </span>
+                            <span className="text-[10px] font-sans text-outline line-through">
+                              {formatPrice(item.original_price)}
+                            </span>
+                            <span className="text-[9px] font-sans font-bold bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded border border-rose-200">
+                              {item.discount_percent ? `${item.discount_percent}% OFF` : 'SALE'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[10px] font-sans tracking-wider text-outline uppercase">
+                            {formatPrice(item.original_price)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">

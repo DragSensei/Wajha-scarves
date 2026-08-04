@@ -1,6 +1,17 @@
 ---
-name: duplicate-code-refactor
-description: Use this skill whenever the user wants to find duplicate or near-duplicate code and safely extract it into a shared function, module, class, or file to improve maintainability and security. Trigger this any time the user mentions duplicate code, code duplication, DRY, repeated logic, copy-pasted code, refactoring for maintainability, consolidating similar functions/components, or reducing risk from inconsistent copies of security-sensitive logic (auth checks, validation, sanitization, permission checks) — even if they don't say "duplicate" explicitly, e.g. "this logic is scattered everywhere" or "we keep fixing the same bug in two places." Always follow this skill's process — trace every call site and build a milestone-based migration plan — before touching any code, so extractions never break existing behavior. Applies to any codebase: web app, backend service, or game project.
+name: refactor
+description: >
+  Use this skill whenever the user types /refactor, wants to refactor code, find
+  duplicate or near-duplicate code and safely extract it into a shared function,
+  module, class, or file to improve maintainability and security. Trigger this
+  any time the user mentions refactoring, duplicate code, code duplication, DRY,
+  repeated logic, copy-pasted code, refactoring for maintainability, consolidating
+  similar functions/components, or reducing risk from inconsistent copies of
+  security-sensitive logic (auth checks, validation, sanitization, permission checks)
+  — even if they don't say "duplicate" explicitly. Always follow this skill's process
+  — trace every call site and build a milestone-based migration plan — before touching
+  any code, so extractions never break existing behavior. Applies to any codebase:
+  web app, backend service, or game project.
 ---
 
 # Duplicate Code Refactor & Safe Extraction
