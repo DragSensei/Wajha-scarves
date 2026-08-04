@@ -1,4 +1,4 @@
-import { Heart, Sparkles, Gift } from 'lucide-react';
+import { Heart, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function DonationPage() {
@@ -34,10 +34,6 @@ export default function DonationPage() {
       <div className="bg-white border border-surface-container/80 rounded-2xl p-6 sm:p-8 shadow-xs mb-12 space-y-8">
         {/* Arabic Version (Top) */}
         <div dir="rtl">
-          <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
-            <Gift className="w-4 h-4" />
-            <span>رسالتنا باللغة العربية</span>
-          </div>
           <p className="text-base md:text-lg font-serif text-on-background leading-loose text-justify font-medium">
             "السكارف اللي هتوصلك.. مش مجرد شياكة وخامة تحبيها، دي شايلة معاها ثواب وضحكة طفل! 💖
             <br /><br />
@@ -53,10 +49,6 @@ export default function DonationPage() {
 
         {/* English Version (Bottom) */}
         <div>
-          <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
-            <Gift className="w-4 h-4" />
-            <span>Our Message in English</span>
-          </div>
           <p className="text-base md:text-lg font-serif text-on-background leading-relaxed text-left font-medium">
             "The scarf you receive isn’t just about style and high quality—it carries a continuous reward and a child's bright smile! 💖
             <br /><br />
