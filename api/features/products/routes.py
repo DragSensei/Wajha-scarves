@@ -134,6 +134,19 @@ def create_product():
             stock=stock or 0
         )
         db.session.add(product)
+        db.session.flush()
+
+        image_ids = data.get('image_ids')
+        if image_ids and isinstance(image_ids, list):
+            for idx, img_id in enumerate(image_ids):
+                img = db.session.get(ProductImage, int(img_id))
+                if img:
+                    img.product_id = product.id
+                    img.sort_order = idx
+                    if idx == 0:
+                        img.is_primary = True
+                        product.image_filename = img.filename
+
         db.session.commit()
         return jsonify(serialize_product(product)), 201
     except Exception as e:
@@ -182,6 +195,17 @@ def update_product(product_id):
         elif 'category' in data:
             product.category = data['category']
             product.category_id = None
+
+        image_ids = data.get('image_ids')
+        if image_ids and isinstance(image_ids, list):
+            for idx, img_id in enumerate(image_ids):
+                img = db.session.get(ProductImage, int(img_id))
+                if img:
+                    img.product_id = product.id
+                    img.sort_order = idx
+                    if idx == 0 and not any(i.is_primary for i in product.images if i.id != img.id):
+                        img.is_primary = True
+                        product.image_filename = img.filename
             
         db.session.commit()
         return jsonify(serialize_product(product))
@@ -218,10 +242,11 @@ def set_primary_image(product_id, image_id):
         return jsonify({"error": "Product not found"}), 404
         
     image = db.session.get(ProductImage, image_id)
-    if not image or image.product_id != product_id:
-        return jsonify({"error": "Image not found or not associated with this product"}), 404
+    if not image or (image.product_id is not None and image.product_id != product_id):
+        return jsonify({"error": "Image not found or belongs to another product"}), 404
         
     try:
+        image.product_id = product_id
         for img in product.images:
             img.is_primary = False
             

@@ -40,31 +40,36 @@ def process_and_save_image(image_file, upload_dir):
         if w * h > 35000000:
             raise ValueError("Image dimensions exceed the safety limit of 35 megapixels.")
 
-        if img_obj.mode in ("RGBA", "P"):
+        if img_obj.mode != "RGB":
             img_obj = img_obj.convert("RGB")
         img_obj.thumbnail((1920, 1080), Image.Resampling.LANCZOS)
 
+        saved_to_blob = False
         if vercel_token:
-            img_io = _io.BytesIO()
-            img_obj.save(img_io, format='JPEG', optimize=True, quality=85)
+            try:
+                img_io = _io.BytesIO()
+                img_obj.save(img_io, format='JPEG', optimize=True, quality=85)
 
-            req = urllib.request.Request(
-                f"https://blob.vercel-storage.com/{unique_filename}",
-                data=img_io.getvalue(),
-                method='PUT'
-            )
-            req.add_header('authorization', f'Bearer {vercel_token}')
-            req.add_header('x-api-version', '7')
-            req.add_header('Content-Type', 'image/jpeg')
-            req.add_header('x-access', 'public')
-            req.add_header('x-add-random-suffix', 'true')
+                req = urllib.request.Request(
+                    f"https://blob.vercel-storage.com/{unique_filename}",
+                    data=img_io.getvalue(),
+                    method='PUT'
+                )
+                req.add_header('authorization', f'Bearer {vercel_token}')
+                req.add_header('x-api-version', '7')
+                req.add_header('Content-Type', 'image/jpeg')
+                req.add_header('x-access', 'public')
+                req.add_header('x-add-random-suffix', 'true')
 
-            with urllib.request.urlopen(req) as res:
-                resp_data = _json.loads(res.read().decode())
-                final_filename = resp_data.get('url')
-                if not final_filename:
-                    raise Exception("Blob upload returned no URL")
-        else:
+                with urllib.request.urlopen(req) as res:
+                    resp_data = _json.loads(res.read().decode())
+                    final_filename = resp_data.get('url')
+                    if final_filename:
+                        saved_to_blob = True
+            except Exception as blob_err:
+                logger.warning(f"Vercel blob upload failed: {blob_err}. Falling back to local storage.")
+
+        if not saved_to_blob:
             os.makedirs(upload_dir, exist_ok=True)
             local_path = os.path.join(upload_dir, unique_filename)
             img_obj.save(local_path, format='JPEG', optimize=True, quality=85)

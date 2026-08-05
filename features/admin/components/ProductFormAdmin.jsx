@@ -95,7 +95,13 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
       }
 
       // Appends newly uploaded images to existing images list in upload order
-      setImages((prev) => [...prev, ...uploadedResults]);
+      setImages((prev) => {
+        const next = [...prev, ...uploadedResults];
+        if (!next.some((img) => img.is_primary) && next.length > 0) {
+          next[0] = { ...next[0], is_primary: true };
+        }
+        return next;
+      });
     } catch (err) {
       setErrorMsg(err.message || 'Failed uploading compressed images.');
     } finally {
@@ -132,6 +138,7 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock, 10) || 0,
       description: formData.description,
+      image_ids: images.map((img) => img.id).filter(Boolean),
     };
 
     if (formData.category_id) {
@@ -139,19 +146,19 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
     }
 
     try {
-      if (createdProductId) {
-        await api.updateProduct(createdProductId, payload);
+      let prodId = createdProductId;
+      if (prodId) {
+        await api.updateProduct(prodId, payload);
       } else {
         const newProd = await api.createProduct(payload);
+        prodId = newProd.id;
         setCreatedProductId(newProd.id);
+      }
 
-        // Link any pre-uploaded images to newly created product
-        if (images.length > 0) {
-          for (const img of images) {
-            if (img.is_primary) {
-              await api.setPrimaryImage(newProd.id, img.id);
-            }
-          }
+      if (images.length > 0) {
+        const primaryImg = images.find((img) => img.is_primary) || images[0];
+        if (primaryImg) {
+          await api.setPrimaryImage(prodId, primaryImg.id).catch(() => {});
         }
       }
       navigate('/admin/products');
