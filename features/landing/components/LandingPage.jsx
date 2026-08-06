@@ -110,13 +110,13 @@ export default function LandingPage() {
 
         .stagger-item {
           opacity: 0;
-          transform: translateY(20px);
-          transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+          transform: translateY(48px);
+          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .is-visible .stagger-item:nth-child(1) { transition-delay: 0.1s; opacity: 1; transform: translateY(0); }
-        .is-visible .stagger-item:nth-child(2) { transition-delay: 0.22s; opacity: 1; transform: translateY(0); }
-        .is-visible .stagger-item:nth-child(3) { transition-delay: 0.34s; opacity: 1; transform: translateY(0); }
-        .is-visible .stagger-item:nth-child(4) { transition-delay: 0.46s; opacity: 1; transform: translateY(0); }
+        .is-visible .stagger-item:nth-child(2) { transition-delay: 0.28s; opacity: 1; transform: translateY(0); }
+        .is-visible .stagger-item:nth-child(3) { transition-delay: 0.46s; opacity: 1; transform: translateY(0); }
+        .is-visible .stagger-item:nth-child(4) { transition-delay: 0.64s; opacity: 1; transform: translateY(0); }
 
         @media (prefers-reduced-motion: reduce) {
           .animate-hero-1, .animate-hero-2, .animate-hero-3, .animate-hero-4, .reveal-section, .stagger-item {
@@ -188,7 +188,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 2. Brand Pillars / Values (Scroll Reveal & Staggered Cards) */}
+      {/* 2. Brand Pillars / Values (Scroll Reveal & Staggered Slide-Up Cards) */}
       <section 
         ref={pillarsRef}
         className={`py-16 md:py-24 border-b border-surface-container/60 bg-surface-container/20 px-6 reveal-section ${
@@ -197,11 +197,11 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Pillar 1 */}
-          <div className="stagger-item flex flex-col items-center text-center p-8 bg-white border border-surface-container shadow-xs space-y-4 hover:border-primary/40 hover:-translate-y-1.5 transition-all duration-300 group">
-            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+          <div className="stagger-item flex flex-col items-center text-center p-8 bg-white border border-surface-container shadow-xs space-y-4 hover:border-primary/50 hover:-translate-y-3 hover:shadow-xl transition-all duration-500 ease-out cursor-pointer group rounded-xs">
+            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
               <Award className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-on-background tracking-wide">
+            <h3 className="text-lg font-serif font-bold text-on-background tracking-wide group-hover:text-primary transition-colors duration-300">
               Artisan Craftsmanship
             </h3>
             <p className="text-xs font-sans text-outline leading-relaxed">
@@ -210,11 +210,11 @@ export default function LandingPage() {
           </div>
 
           {/* Pillar 2 */}
-          <div className="stagger-item flex flex-col items-center text-center p-8 bg-white border border-surface-container shadow-xs space-y-4 hover:border-primary/40 hover:-translate-y-1.5 transition-all duration-300 group">
-            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+          <div className="stagger-item flex flex-col items-center text-center p-8 bg-white border border-surface-container shadow-xs space-y-4 hover:border-primary/50 hover:-translate-y-3 hover:shadow-xl transition-all duration-500 ease-out cursor-pointer group rounded-xs">
+            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-on-background tracking-wide">
+            <h3 className="text-lg font-serif font-bold text-on-background tracking-wide group-hover:text-primary transition-colors duration-300">
               Effortless Modest Poise
             </h3>
             <p className="text-xs font-sans text-outline leading-relaxed">
@@ -223,11 +223,11 @@ export default function LandingPage() {
           </div>
 
           {/* Pillar 3 */}
-          <div className="stagger-item flex flex-col items-center text-center p-8 bg-white border border-surface-container shadow-xs space-y-4 hover:border-primary/40 hover:-translate-y-1.5 transition-all duration-300 group">
-            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
+          <div className="stagger-item flex flex-col items-center text-center p-8 bg-white border border-surface-container shadow-xs space-y-4 hover:border-primary/50 hover:-translate-y-3 hover:shadow-xl transition-all duration-500 ease-out cursor-pointer group rounded-xs">
+            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all duration-500">
               <Heart className="w-6 h-6 text-rose-500 group-hover:text-white transition-colors" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-on-background tracking-wide">
+            <h3 className="text-lg font-serif font-bold text-on-background tracking-wide group-hover:text-primary transition-colors duration-300">
               Giving Back With Purpose
             </h3>
             <p className="text-xs font-sans text-outline leading-relaxed">
