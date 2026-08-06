@@ -34,7 +34,7 @@ def validate_product(data, is_update=False):
         except (ValueError, TypeError):
             errors.append({"field": "stock", "message": "Stock must be a valid integer"})
 
-    if 'category_id' in data and category_id is not None:
+    if 'category_id' in data and category_id not in (None, ''):
         try:
             int(category_id)
         except (ValueError, TypeError):

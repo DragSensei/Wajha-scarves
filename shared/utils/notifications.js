@@ -7,10 +7,14 @@ export function formatHumanErrorMessage(errData, status) {
   if (typeof errData === 'string') {
     message = errData;
   } else if (errData && typeof errData === 'object') {
-    if (errData.details && typeof errData.details === 'object') {
-      const detailValues = Object.values(errData.details);
-      if (detailValues.length > 0) {
-        message = detailValues.join('. ');
+    if (errData.details) {
+      if (Array.isArray(errData.details)) {
+        message = errData.details.map(d => (typeof d === 'object' ? (d.message || d.field || JSON.stringify(d)) : String(d))).join('. ');
+      } else if (typeof errData.details === 'object') {
+        const detailValues = Object.values(errData.details).map(d => (typeof d === 'object' ? (d.message || JSON.stringify(d)) : String(d)));
+        if (detailValues.length > 0) {
+          message = detailValues.join('. ');
+        }
       }
     }
     if (!message && errData.error) {
