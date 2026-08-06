@@ -192,14 +192,41 @@ Image uploads implement a dual-layer compression strategy to optimize network ba
 
 ---
 
-## 9. Architecture Knowledge Base
-For deeper system architecture details, decisions, and schema specs, see [/architecture/](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/):
-- [overview.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/overview.md) — Tech stack & folder boundaries
-- [decisions.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/decisions.md) — Architectural decisions log
-- [gotchas.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/gotchas.md) — Lessons learned & edge cases
-- [data-model.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/data-model.md) — Database schema reference
+## 10. Digital Gift Vouchers & Birthday Loyalty Architecture
 
+### Digital Gift Vouchers System
+- **Denominations**: Fixed options of 100, 200, 500, 1000, and 2000 EGP.
+- **Data Model**: Extended `GiftCard` in `api/core/models.py` with `buyer_id`, `buyer_email`, `recipient_name`, `recipient_email`, `gift_message`, and order workflow `status` (`'pending'`, `'contacted'`, `'done'`).
+- **Feature Package**: `api/features/vouchers/` provides blueprint endpoints:
+  - `POST /api/vouchers/buy`: Validate payload & record purchase request.
+  - `GET /api/vouchers/my-vouchers`: Fetch user's digital gift cards.
+  - `GET /api/vouchers/admin`: Fetch all voucher orders for administration.
+  - `PUT /api/vouchers/admin/<id>/status`: Update voucher status (`pending` → `contacted` → `done`).
+- **Frontend Pages & Components**:
+  - `VoucherPurchasePage.jsx` (`/vouchers`): Customization form with live preview and instant 1-click code copying.
+  - `MyVouchersList.jsx`: Rendered on user Profile page.
+  - `AdminVouchersManager.jsx` (`/admin/vouchers`): Filterable order status table for admin fulfillment.
 
+### Birthday Loyalty Points & Tier Qualification Logic
+- **Dual-Reward Issuance**: `issue_birthday_rewards()` in `api/features/loyalty/services.py` issues both a percentage discount voucher (`birthday_bonus`) and loyalty points (`birthday_points`).
+- **Timezone Boundary Handling**: Compares birthdates against both UTC and local server dates to prevent midnight boundary missed rewards.
+- **Tier Spend Thresholds**: Users meeting a tier's `spend_threshold` receive their tier-specific `birthday_reward` points; users below the threshold receive the default fallback points setting (150 pts).
+- **Automatic Status Check Sync**: `get_user_loyalty_status()` triggers `issue_birthday_rewards(target_user_id)` so qualified users visiting their profile or rewards page on their birthday receive points instantly.
 
+---
 
+## 11. CallMeBot WhatsApp Order & Voucher Notifications
 
+### Status & Functionality
+- **Current Status**: **Fully Functional** (System implementation complete; pending owner's WhatsApp phone number & CallMeBot API key input in Admin Settings).
+
+### Architecture & Implementation
+- **Service Integration**: Utilizes CallMeBot's WhatsApp HTTP API (`https://api.callmebot.com/whatsapp.php`) to send free instant notifications directly to the site owner's mobile device upon checkout.
+- **Asynchronous & Fail-Safe Dispatch**: `send_callmebot_whatsapp()` in `api/core/utils.py` executes HTTP requests inside a daemon thread (`threading.Thread`). External gateway slowdowns or downtime will never block or fail customer order creation or gift card purchases.
+- **Egyptian & International Phone Normalization**: Automatically sanitizes input numbers and converts local Egyptian mobile formats (`010xxxxxxxx`) into standard E.164 international format (`+2010xxxxxxxx`).
+- **Notification Triggers**:
+  - **Physical Product Checkout**: Triggered in `api_create_order()` (`api/features/cart/routes.py`) upon successful database transaction commit. Sends order ID, customer name, phone, items summary, and total amount in EGP.
+  - **Digital Gift Card Purchase**: Triggered in `purchase_voucher()` (`api/features/vouchers/services.py`) upon successful voucher creation. Sends voucher code, value in EGP, buyer email, recipient name, and gift message.
+- **Admin Configuration & Test Endpoint**:
+  - Whitelisted settings: `callmebot_enabled`, `callmebot_phone`, `callmebot_apikey`.
+  - `POST /api/admin/settings/test-callmebot` route in `api/features/admin/routes.py` allows admins to verify credentials and test live delivery directly from the Admin Settings panel (`SettingsAdmin.jsx`).

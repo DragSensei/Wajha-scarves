@@ -12,10 +12,11 @@ description: >
   everything else, including anything touching data, auth, money, or
   business logic, goes through the full workflow: mandatory clarifying
   questions, a persistent /architecture/ knowledge base read and updated
-  every time, a mandatory reuse/dedup check, database migrations written as
-  a priority with optimized queries, Ponytail-disciplined implementation,
-  a mandatory security review, mandatory unit tests, milestone tracking,
-  and a GEMINI.md update on completion.
+  every time, a mandatory reuse/dedup check, running the ponytail skill,
+  running the optimize skill to create the best optimized implementation plan,
+  database migrations written as a priority with optimized queries,
+  Ponytail-disciplined implementation, a mandatory security review,
+  mandatory unit tests, milestone tracking, and a GEMINI.md update on completion.
 ---
 
 # Feature Development
@@ -101,7 +102,11 @@ twice. (Pairs with the `duplicate-code-refactor` skill if it's available;
 run that skill's Phase 1 search logic here rather than skipping straight
 to new code.)
 
-## Phase 4 — Write the feature plan
+## Phase 4 — Write the feature plan (Run Ponytail & Optimize)
+
+Before constructing the plan, you MUST run:
+1. The **`ponytail`** skill to enforce the simplest, laziest working design.
+2. The **`optimize`** skill to refine that design for performance, data saving, and resource usage.
 
 Required unless Phase 0 said lightweight. Cover:
 
@@ -158,9 +163,7 @@ handling that prevents data loss, security measures, accessibility basics,
 or anything the user explicitly asked for. This carve-out is what keeps
 Phase 6 and Phase 8 from working against each other.
 
-If the `ponytail` skill is available in the environment, invoke it
-directly for this phase — the rules above are the condensed version to
-apply if it isn't.
+You MUST invoke the `ponytail` skill directly for this phase to enforce the ladder of minimalism.
 
 ## Phase 7 — Admin-configurability pass
 
