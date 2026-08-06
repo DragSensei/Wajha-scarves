@@ -173,7 +173,7 @@ To show a customer their order history on the Profile page while complying with 
 
 ---
 
-## 7. Image Upload & Dual-Layer Compression Architecture
+## 8. Image Upload & Dual-Layer Compression Architecture
 
 Image uploads implement a dual-layer compression strategy to optimize network bandwidth and server storage:
 
@@ -192,12 +192,13 @@ Image uploads implement a dual-layer compression strategy to optimize network ba
 
 ---
 
-## 8. Architecture Knowledge Base
+## 9. Architecture Knowledge Base
 For deeper system architecture details, decisions, and schema specs, see [/architecture/](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/):
 - [overview.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/overview.md) — Tech stack & folder boundaries
 - [decisions.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/decisions.md) — Architectural decisions log
 - [gotchas.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/gotchas.md) — Lessons learned & edge cases
 - [data-model.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/data-model.md) — Database schema reference
+
 
 
 
