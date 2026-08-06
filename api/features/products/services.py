@@ -45,6 +45,7 @@ def process_and_save_image(image_file, upload_dir):
         img_obj.thumbnail((1920, 1080), Image.Resampling.LANCZOS)
 
         saved_to_blob = False
+        blob_debug = f"BLOB_READ_WRITE_TOKEN {'PRESENT' if vercel_token else 'MISSING'}"
         if vercel_token:
             try:
                 img_io = _io.BytesIO()
@@ -55,7 +56,7 @@ def process_and_save_image(image_file, upload_dir):
                     data=img_io.getvalue(),
                     method='PUT'
                 )
-                req.add_header('Authorization', f'Bearer {vercel_token}')
+                req.add_header('Authorization', f'Bearer {vercel_token.strip()}')
                 req.add_header('x-api-version', '7')
                 req.add_header('Content-Type', 'image/jpeg')
                 req.add_header('x-access', 'public')
@@ -66,14 +67,19 @@ def process_and_save_image(image_file, upload_dir):
                     final_filename = resp_data.get('url')
                     if final_filename:
                         saved_to_blob = True
+                        blob_debug = f"SUCCESS: {final_filename}"
+                    else:
+                        blob_debug = f"No url in response: {resp_data}"
             except urllib.error.HTTPError as http_err:
                 err_body = http_err.read().decode('utf-8', errors='ignore')
+                blob_debug = f"HTTP {http_err.code}: {err_body}"
                 logger.error(f"Vercel blob upload HTTP {http_err.code}: {err_body}. Falling back to local storage.")
             except Exception as blob_err:
+                blob_debug = f"Exception: {str(blob_err)}"
                 logger.warning(f"Vercel blob upload failed: {blob_err}. Falling back to local storage.")
 
         if not saved_to_blob:
-            logger.warning("Vercel Blob failed or not configured; attempting local storage fallback.")
+            logger.warning(f"Vercel Blob failed ({blob_debug}); attempting local storage fallback.")
             try:
                 os.makedirs(upload_dir, exist_ok=True)
                 local_path = os.path.join(upload_dir, unique_filename)
@@ -86,7 +92,7 @@ def process_and_save_image(image_file, upload_dir):
                 img_obj.save(local_path, format='JPEG', optimize=True, quality=85)
             final_filename = unique_filename
             
-    return final_filename
+    return final_filename, blob_debug
 
 
 def delete_product_helper(db_session, product, upload_dir):

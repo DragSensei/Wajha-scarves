@@ -520,7 +520,7 @@ def upload_image():
             
     try:
         upload_dir = current_app.config['UPLOAD_FOLDER']
-        final_filename = process_and_save_image(file, upload_dir)
+        final_filename, blob_debug = process_and_save_image(file, upload_dir)
         
         sort_order = 0
         if product:
@@ -535,7 +535,9 @@ def upload_image():
         
         db.session.add(new_img)
         db.session.commit()
-        return jsonify(serialize_image(new_img)), 201
+        resp_data = serialize_image(new_img)
+        resp_data['blob_debug'] = blob_debug
+        return jsonify(resp_data), 201
     except ValueError as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
