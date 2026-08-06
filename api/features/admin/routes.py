@@ -545,3 +545,19 @@ def upload_image():
         db.session.rollback()
         logger.error(f"Image upload failure: {str(e)}", exc_info=True)
         return jsonify({"error": f"Image processing failed: {str(e)}"}), 500
+
+
+@admin_images_bp.route('/<int:image_id>', methods=['DELETE'])
+@admin_required
+@limiter.limit("200 per day; 50 per hour")
+def delete_image(image_id):
+    img = db.session.get(ProductImage, image_id)
+    if not img:
+        return jsonify({"error": "Image not found"}), 404
+    try:
+        db.session.delete(img)
+        db.session.commit()
+        return '', 204
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

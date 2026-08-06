@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, Star, Save, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, Star, Trash, Save, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { compressImage } from '@/shared/utils/imageCompressor';
 import Combobox from '@/shared/components/Combobox';
@@ -125,6 +125,23 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
       );
     } catch (err) {
       setErrorMsg(err.message || 'Failed to set primary image.');
+    }
+  };
+
+  const handleDeleteImage = async (imageId, index) => {
+    try {
+      if (imageId) {
+        await api.deleteProductImage(imageId).catch(() => {});
+      }
+      setImages((prev) => {
+        const next = prev.filter((img, i) => (img.id ? img.id !== imageId : i !== index));
+        if (next.length > 0 && !next.some((img) => img.is_primary)) {
+          next[0] = { ...next[0], is_primary: true };
+        }
+        return next;
+      });
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to delete image.');
     }
   };
 
@@ -401,6 +418,15 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
                           title={img.is_primary ? 'Primary Image' : 'Set as Primary'}
                         >
                           <Star className="w-4 h-4 fill-current" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteImage(img.id, idx)}
+                          className="p-2 rounded-full cursor-pointer bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+                          title="Remove Image"
+                        >
+                          <Trash className="w-4 h-4" />
                         </button>
                       </div>
 

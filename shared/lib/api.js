@@ -145,6 +145,12 @@ export const api = {
     });
   },
 
+  async deleteProductImage(imageId) {
+    return await request(`/admin/images/${imageId}`, {
+      method: 'DELETE',
+    });
+  },
+
   async getDbWishlist() {
     return await request('/products/wishlist', { silent: true });
   },
