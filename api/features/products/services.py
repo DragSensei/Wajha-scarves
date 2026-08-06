@@ -55,17 +55,20 @@ def process_and_save_image(image_file, upload_dir):
                     data=img_io.getvalue(),
                     method='PUT'
                 )
-                req.add_header('authorization', f'Bearer {vercel_token}')
+                req.add_header('Authorization', f'Bearer {vercel_token}')
                 req.add_header('x-api-version', '7')
                 req.add_header('Content-Type', 'image/jpeg')
                 req.add_header('x-access', 'public')
-                req.add_header('x-add-random-suffix', 'true')
+                req.add_header('x-add-random-suffix', '1')
 
                 with urllib.request.urlopen(req) as res:
                     resp_data = _json.loads(res.read().decode())
                     final_filename = resp_data.get('url')
                     if final_filename:
                         saved_to_blob = True
+            except urllib.error.HTTPError as http_err:
+                err_body = http_err.read().decode('utf-8', errors='ignore')
+                logger.error(f"Vercel blob upload HTTP {http_err.code}: {err_body}. Falling back to local storage.")
             except Exception as blob_err:
                 logger.warning(f"Vercel blob upload failed: {blob_err}. Falling back to local storage.")
 
