@@ -120,11 +120,11 @@ def serialize_product(product):
     discount_percent = round((1.0 - (disc_price / product.price)) * 100) if (discount_active and product.price > 0) else 0
 
     primary_image_url = None
-    if product.image_filename:
-        primary_image_url = get_image_url(product.image_filename)
-    elif product.images:
+    if product.images:
         sorted_imgs = sorted(product.images, key=lambda x: (not x.is_primary, x.sort_order))
         primary_image_url = get_image_url(sorted_imgs[0].filename)
+    elif product.image_filename:
+        primary_image_url = get_image_url(product.image_filename)
 
     serialized_images = [
         {

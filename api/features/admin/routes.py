@@ -555,6 +555,10 @@ def delete_image(image_id):
     if not img:
         return jsonify({"error": "Image not found"}), 404
     try:
+        if img.product_id:
+            prod = db.session.get(Product, img.product_id)
+            if prod and prod.image_filename == img.filename:
+                prod.image_filename = None
         db.session.delete(img)
         db.session.commit()
         return '', 204
