@@ -22,7 +22,9 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
     price: '',
     stock: 0,
     category_id: '',
-    description: ''
+    description: '',
+    details: '',
+    care_instructions: ''
   });
 
   const [images, setImages] = useState([]);
@@ -60,7 +62,9 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
           price: prod.original_price ?? prod.price ?? '',
           stock: prod.stock ?? 0,
           category_id: prod.category_id ? String(prod.category_id) : '',
-          description: prod.description || ''
+          description: prod.description || '',
+          details: prod.details || '',
+          care_instructions: prod.care_instructions || ''
         });
         setImages(prod.images || []);
       }
@@ -155,6 +159,8 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock, 10) || 0,
       description: formData.description,
+      details: formData.details,
+      care_instructions: formData.care_instructions,
       image_ids: images.map((img) => img.id).filter(Boolean),
     };
 
@@ -349,10 +355,34 @@ export default function ProductFormAdmin({ mode = 'edit' }) {
           <div>
             <label className="block text-outline font-semibold uppercase tracking-wider mb-2">Product Description</label>
             <textarea 
-              rows={6}
+              rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Detailed luxury material description, weaving style, and story..."
+              className="w-full border border-surface-container p-3 text-on-background focus:outline-none focus:border-primary font-sans leading-relaxed text-sm mb-4"
+            />
+          </div>
+
+          <div>
+            <label className="block text-outline font-semibold uppercase tracking-wider mb-1">Product Details (Bullet Points)</label>
+            <p className="text-[11px] text-outline mb-2">Enter each product detail on a new line (e.g. dimensions, weight, fabric blend).</p>
+            <textarea 
+              rows={4}
+              value={formData.details}
+              onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+              placeholder="Premium fabric weight designed for all-season breathability.&#10;Rectangular wrap dimensions: 180cm x 75cm.&#10;Hand-finished stitching borders ensuring maximum longevity."
+              className="w-full border border-surface-container p-3 text-on-background focus:outline-none focus:border-primary font-sans leading-relaxed text-sm mb-4"
+            />
+          </div>
+
+          <div>
+            <label className="block text-outline font-semibold uppercase tracking-wider mb-1">Care Instructions (Bullet Points)</label>
+            <p className="text-[11px] text-outline mb-2">Enter each care instruction on a new line.</p>
+            <textarea 
+              rows={4}
+              value={formData.care_instructions}
+              onChange={(e) => setFormData({ ...formData, care_instructions: e.target.value })}
+              placeholder="Hand wash gently in lukewarm water using a pH-neutral silk wash.&#10;Do not wring or twist. Roll in a towel to absorb excess moisture.&#10;Dry flat away from direct sunlight.&#10;Iron on low heat settings on the reverse side while slightly damp."
               className="w-full border border-surface-container p-3 text-on-background focus:outline-none focus:border-primary font-sans leading-relaxed text-sm"
             />
           </div>

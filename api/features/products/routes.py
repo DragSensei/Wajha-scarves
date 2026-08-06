@@ -125,10 +125,16 @@ def create_product():
         resolved_category_id = category_id
         
     try:
+        # ponytail: details & care instructions fields
+        details = data.get('details')
+        care_instructions = data.get('care_instructions')
+
         product = Product(
             name=name,
             price=price,
             description=description,
+            details=details,
+            care_instructions=care_instructions,
             category_id=resolved_category_id,
             category=category if resolved_category_id is None else 'unclassified',
             stock=stock or 0
@@ -187,6 +193,10 @@ def update_product(product_id):
             product.price = float(data['price'])
         if 'description' in data:
             product.description = data['description']
+        if 'details' in data:
+            product.details = data['details']
+        if 'care_instructions' in data:
+            product.care_instructions = data['care_instructions']
         if 'stock' in data:
             product.stock = int(data['stock'])
             

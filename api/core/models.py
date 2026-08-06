@@ -39,6 +39,9 @@ class Product(db.Model):
     name = db.Column(db.String(150), unique=True, nullable=False)
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=True)
+    # ponytail: optional custom details & care instructions per product
+    details = db.Column(db.Text, nullable=True)
+    care_instructions = db.Column(db.Text, nullable=True)
     category = db.Column(db.String(50), nullable=True, default='unclassified')
     category_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='SET NULL'), nullable=True, default=None)
     image_filename = db.Column(db.String(255), nullable=True)

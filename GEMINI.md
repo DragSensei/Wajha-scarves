@@ -22,6 +22,7 @@ project/
     ├── products/             # Scarf catalog, detail pages, grid listing
     ├── categories/           # Filter tabs and product categorization
     ├── cart/                 # Cart list, drawer, and checkout trigger
+    ├── landing/              # Brand landing page, couture hero, and store entry point
     └── admin/                # Admin panels, CRUD modals, and dashboard orchestration
 ```
 
@@ -143,10 +144,21 @@ Set the following environment variables in the Vercel dashboard:
 - `CORS_ORIGIN`: Comma-separated list of allowed frontend origins (e.g. `https://yourdomain.vercel.app`).
 - `AUTH_MODE`: Set to `local` to enable local JWT authentication.
 - `SESSION_COOKIE_SECURE`: Set to `True` to enforce HTTPS cookies.
+- `BLOB_READ_WRITE_TOKEN`: Read/write access token for Vercel Blob storage (enables persistent cloud image uploads across serverless lambdas).
 
 ---
 
-## 6. Cart Persistence & Modest Order Boundaries
+## 6. Image Storage & Product Media Management
+
+### Vercel Blob Integration
+- **Serverless Ephemeral Storage Fallback**: On Vercel serverless environments, local disk storage is read-only or ephemeral. Image uploads use Vercel Blob storage when `BLOB_READ_WRITE_TOKEN` is configured.
+- **Image Processing**: Uploaded product images are automatically validated (max 35MP safety limit), converted to RGB, and compressed as high-quality JPEGs before being stored in Vercel Blob.
+- **Image Serialization**: `serialize_product` prioritizes `ProductImage` database gallery records over legacy `product.image_filename` columns.
+- **Admin Image Operations**: Admin interface supports multi-image upload, setting primary image (`PUT /api/products/<id>/images/<id>/primary`), and deleting individual images (`DELETE /api/admin/images/<id>`).
+
+---
+
+## 7. Cart Persistence & Modest Order Boundaries
 
 ### Cart Persistence Strategy
 - **Logged-Out Cart**: Managed fully client-side inside the browser's `localStorage` under `diya_cart`.
@@ -158,5 +170,35 @@ Set the following environment variables in the Vercel dashboard:
 To show a customer their order history on the Profile page while complying with the strict `Core Feature Independence` constraint (which prevents features like `auth` and `cart` from importing each other):
 - The order query service `get_orders_by_email` and the customer route `GET /api/orders/my-orders` are housed entirely inside the `cart` feature package.
 - The client-side React code in `ProfilePage` fetches this information directly from `/api/orders/my-orders`. No cross-feature Python imports are executed, satisfying all boundary contracts.
+
+---
+
+## 7. Image Upload & Dual-Layer Compression Architecture
+
+Image uploads implement a dual-layer compression strategy to optimize network bandwidth and server storage:
+
+### Client-Side Pre-processing (Browser)
+- **Utility**: `shared/utils/imageCompressor.js` (`compressImage`)
+- **Flow**: Intercepts file inputs in `ProductFormAdmin.jsx` prior to API transmission.
+- **Behavior**: Resizes images to maximum `1920 × 1080` resolution maintaining aspect ratio using HTML5 `<canvas>`, exporting JPEG format at `80%` quality (`quality = 0.8`).
+- **Purpose**: Dramatically reduces request payload size transmitted over the network.
+
+### Server-Side Processing & Safety (Flask / Pillow)
+- **Service**: `api/features/products/services.py` (`process_and_save_image`)
+- **Security Guard**: Enforces a 35 Megapixel upper limit (`Image.MAX_IMAGE_PIXELS = 35000000`) to prevent decompression bomb DoS attacks.
+- **Normalization**: Converts non-RGB color spaces (RGBA PNG transparency, CMYK) into standard `RGB`.
+- **Backend Downscaling & Compression**: Re-verifies resolution cap at `1920 × 1080` using Lanczos resampling and exports optimized JPEG at `85%` quality.
+- **Storage Strategy**: Saves to Vercel Blob storage when `BLOB_READ_WRITE_TOKEN` is set; falls back gracefully to local disk (`uploads/` or system `/tmp`).
+
+---
+
+## 8. Architecture Knowledge Base
+For deeper system architecture details, decisions, and schema specs, see [/architecture/](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/):
+- [overview.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/overview.md) — Tech stack & folder boundaries
+- [decisions.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/decisions.md) — Architectural decisions log
+- [gotchas.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/gotchas.md) — Lessons learned & edge cases
+- [data-model.md](file:///c:/Project/Wajha%20Technologies/Wajha%20Scarves/architecture/data-model.md) — Database schema reference
+
+
 
 

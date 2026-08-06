@@ -11,6 +11,7 @@ import DonationPage from '@/shared/components/DonationPage';
 import NotificationToast from '@/shared/components/NotificationToast';
 
 // Customer Pages
+import LandingPage from '@/features/landing/components/LandingPage';
 import Shop from '@/features/products/components/Shop';
 import ProductDetails from '@/features/products/components/ProductDetails';
 import WishlistPage from '@/features/products/components/WishlistPage';
@@ -304,7 +305,8 @@ function AppContent() {
 
       <main className="flex-grow">
         <Routes>
-          <Route path="/" element={<Shop onAddToCart={handleAddToCart} />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/shop" element={<Shop onAddToCart={handleAddToCart} />} />
           <Route path="/category/:categorySlug" element={<Shop onAddToCart={handleAddToCart} />} />
           <Route path="/product/:id" element={<ProductDetails onAddToCart={handleAddToCart} />} />
           <Route path="/wishlist" element={<WishlistPage onAddToCart={handleAddToCart} />} />

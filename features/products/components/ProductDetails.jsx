@@ -202,20 +202,38 @@ export default function ProductDetails({ onAddToCart }) {
               </button>
             </div>
 
-            {activeTab === 'details' ? (
-              <div className="text-xs font-sans text-outline leading-relaxed space-y-2">
-                <p>• Premium fabric weight designed for all-season breathability.</p>
-                <p>• Rectangular wrap dimensions: 180cm x 75cm.</p>
-                <p>• Hand-finished stitching borders ensuring maximum longevity.</p>
-              </div>
-            ) : (
-              <div className="text-xs font-sans text-outline leading-relaxed space-y-2">
-                <p>• Hand wash gently in lukewarm water using a pH-neutral silk wash.</p>
-                <p>• Do not wring or twist. Roll in a towel to absorb excess moisture.</p>
-                <p>• Dry flat away from direct sunlight.</p>
-                <p>• Iron on low heat settings on the reverse side while slightly damp.</p>
-              </div>
-            )}
+            {(() => {
+              // ponytail: parse multiline strings into bullet lines or fallback to luxury defaults
+              const defaultDetails = [
+                'Premium fabric weight designed for all-season breathability.',
+                'Rectangular wrap dimensions: 180cm x 75cm.',
+                'Hand-finished stitching borders ensuring maximum longevity.'
+              ];
+              const defaultCare = [
+                'Hand wash gently in lukewarm water using a pH-neutral silk wash.',
+                'Do not wring or twist. Roll in a towel to absorb excess moisture.',
+                'Dry flat away from direct sunlight.',
+                'Iron on low heat settings on the reverse side while slightly damp.'
+              ];
+
+              const getLines = (text, fallback) => {
+                if (!text || !text.trim()) return fallback;
+                const split = text.split('\n').map(s => s.trim().replace(/^[•\-*\s]+/, '')).filter(Boolean);
+                return split.length > 0 ? split : fallback;
+              };
+
+              const activeList = activeTab === 'details' 
+                ? getLines(product.details, defaultDetails)
+                : getLines(product.care_instructions, defaultCare);
+
+              return (
+                <div className="text-xs font-sans text-outline leading-relaxed space-y-2">
+                  {activeList.map((line, idx) => (
+                    <p key={idx}>• {line}</p>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

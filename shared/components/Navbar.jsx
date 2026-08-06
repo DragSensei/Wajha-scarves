@@ -231,10 +231,22 @@ export default function Navbar({ cartCount, onCartClick, user, onLogout }) {
           </div>
           
           <nav className="divide-y divide-surface-container/60 border-t border-b border-surface-container/60">
-            {/* Shop All Collections */}
+            {/* Home Landing */}
             <div className="py-3 px-1">
               <Link 
                 to="/" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group font-medium"
+              >
+                <span>Home / Editorial</span>
+                <span className="text-xs font-sans text-outline tracking-normal opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </Link>
+            </div>
+
+            {/* Shop All Collections */}
+            <div className="py-3 px-1">
+              <Link 
+                to="/shop" 
                 onClick={() => setIsMenuOpen(false)}
                 className="text-sm md:text-base font-serif tracking-wide text-on-background hover:text-primary transition-colors flex justify-between items-center group font-medium"
               >

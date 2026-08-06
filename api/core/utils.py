@@ -140,6 +140,9 @@ def serialize_product(product):
         'id': product.id,
         'name': product.name,
         'description': product.description,
+        # ponytail: details & care instructions fields
+        'details': product.details,
+        'care_instructions': product.care_instructions,
         'created_at': product.created_at.isoformat() if product.created_at else None,
         'original_price': product.price,
         'discounted_price': discounted_price,

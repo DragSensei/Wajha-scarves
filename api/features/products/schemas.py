@@ -40,4 +40,9 @@ def validate_product(data, is_update=False):
         except (ValueError, TypeError):
             errors.append({"field": "category_id", "message": "Category ID must be an integer"})
 
+    # ponytail: optional text field checks
+    for field in ['details', 'care_instructions']:
+        if field in data and data[field] is not None and not isinstance(data[field], str):
+            errors.append({"field": field, "message": f"{field.replace('_', ' ').title()} must be a string"})
+
     return len(errors) == 0, errors
