@@ -47,7 +47,7 @@ def process_and_save_image(image_file, upload_dir):
         saved_to_blob = False
         blob_debug = f"BLOB_READ_WRITE_TOKEN {'PRESENT' if vercel_token else 'MISSING'}"
         if vercel_token:
-            for access_mode in ['public', 'private']:
+            for access_mode in [None, 'public', 'private']:
                 try:
                     img_io = _io.BytesIO()
                     img_obj.save(img_io, format='JPEG', optimize=True, quality=85)
@@ -60,7 +60,8 @@ def process_and_save_image(image_file, upload_dir):
                     req.add_header('Authorization', f'Bearer {vercel_token.strip()}')
                     req.add_header('x-api-version', '7')
                     req.add_header('Content-Type', 'image/jpeg')
-                    req.add_header('x-access', access_mode)
+                    if access_mode:
+                        req.add_header('x-access', access_mode)
                     req.add_header('x-add-random-suffix', '1')
 
                     with urllib.request.urlopen(req) as res:
@@ -68,17 +69,17 @@ def process_and_save_image(image_file, upload_dir):
                         final_filename = resp_data.get('url') or resp_data.get('downloadUrl')
                         if final_filename:
                             saved_to_blob = True
-                            blob_debug = f"SUCCESS ({access_mode}): {final_filename}"
+                            blob_debug = f"SUCCESS (mode={access_mode}): {final_filename}"
                             break
                         else:
-                            blob_debug = f"No url in response ({access_mode}): {resp_data}"
+                            blob_debug = f"No url in response (mode={access_mode}): {resp_data}"
                 except urllib.error.HTTPError as http_err:
                     err_body = http_err.read().decode('utf-8', errors='ignore')
-                    blob_debug = f"HTTP {http_err.code} ({access_mode}): {err_body}"
-                    logger.error(f"Vercel blob upload HTTP {http_err.code} ({access_mode}): {err_body}")
+                    blob_debug = f"HTTP {http_err.code} (mode={access_mode}): {err_body}"
+                    logger.error(f"Vercel blob upload HTTP {http_err.code} (mode={access_mode}): {err_body}")
                 except Exception as blob_err:
-                    blob_debug = f"Exception ({access_mode}): {str(blob_err)}"
-                    logger.warning(f"Vercel blob upload failed ({access_mode}): {blob_err}")
+                    blob_debug = f"Exception (mode={access_mode}): {str(blob_err)}"
+                    logger.warning(f"Vercel blob upload failed (mode={access_mode}): {blob_err}")
 
         if not saved_to_blob:
             logger.warning(f"Vercel Blob failed ({blob_debug}); attempting local storage fallback.")
