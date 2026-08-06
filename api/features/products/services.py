@@ -73,9 +73,17 @@ def process_and_save_image(image_file, upload_dir):
                 logger.warning(f"Vercel blob upload failed: {blob_err}. Falling back to local storage.")
 
         if not saved_to_blob:
-            os.makedirs(upload_dir, exist_ok=True)
-            local_path = os.path.join(upload_dir, unique_filename)
-            img_obj.save(local_path, format='JPEG', optimize=True, quality=85)
+            logger.warning("Vercel Blob failed or not configured; attempting local storage fallback.")
+            try:
+                os.makedirs(upload_dir, exist_ok=True)
+                local_path = os.path.join(upload_dir, unique_filename)
+                img_obj.save(local_path, format='JPEG', optimize=True, quality=85)
+            except OSError as os_err:
+                import tempfile
+                logger.warning(f"Read-only filesystem encountered ({os_err}). Falling back to temp directory.")
+                temp_dir = tempfile.gettempdir()
+                local_path = os.path.join(temp_dir, unique_filename)
+                img_obj.save(local_path, format='JPEG', optimize=True, quality=85)
             final_filename = unique_filename
             
     return final_filename

@@ -104,6 +104,7 @@ export const api = {
   },
 
   async uploadProductImage(file, productId = null) {
+    console.log('[DEBUG uploadProductImage] Starting upload for file:', file?.name, 'size:', file?.size, 'type:', file?.type, 'productId:', productId);
     const formData = new FormData();
     formData.append('file', file);
     if (productId) formData.append('product_id', productId);
@@ -117,17 +118,25 @@ export const api = {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    const res = await fetch(`${BASE_URL}/admin/images/upload`, {
-      method: 'POST',
-      body: formData,
-      headers,
-      credentials: 'include'
-    });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Upload failed with status ${res.status}`);
+    try {
+      const res = await fetch(`${BASE_URL}/admin/images/upload`, {
+        method: 'POST',
+        body: formData,
+        headers,
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('[DEBUG uploadProductImage Error]', res.status, res.statusText, errData);
+        throw new Error(errData.error || `Upload failed with status ${res.status}`);
+      }
+      const result = await res.json();
+      console.log('[DEBUG uploadProductImage Success]', result);
+      return result;
+    } catch (err) {
+      console.error('[DEBUG uploadProductImage Exception]', err);
+      throw err;
     }
-    return await res.json();
   },
 
   async setPrimaryImage(productId, imageId) {
