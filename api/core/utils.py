@@ -184,10 +184,12 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
     # Default to enabled if phone and apikey exist unless explicitly disabled ('false', '0', 'no')
     if enabled_setting is not None and str(enabled_setting).lower() in ('false', '0', 'no', 'off'):
         if not phone_override:
+            print("[CallMeBot DEBUG] CallMeBot notifications are explicitly disabled in settings.")
             return False, "CallMeBot notifications are disabled."
 
     if not phone or not apikey:
-        return False, "Missing phone number or CallMeBot API key."
+        print(f"[CallMeBot DEBUG] Missing credentials — phone: '{phone}', apikey: '{apikey}'")
+        return False, f"Missing phone number ({phone or 'missing'}) or CallMeBot API key ({'present' if apikey else 'missing'})."
 
     # Clean and format phone number
     raw = str(phone).strip()
@@ -196,16 +198,33 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
         clean = '+20' + clean[1:]
     elif clean.startswith('20') and len(clean) == 12:
         clean = '+' + clean
+    elif not clean.startswith('+') and len(clean) >= 10:
+        clean = '+' + clean
 
     def _execute():
         try:
-            encoded_text = urllib.parse.quote(message)
-            url = f"https://api.callmebot.com/whatsapp.php?phone={urllib.parse.quote(clean)}&text={encoded_text}&apikey={urllib.parse.quote(str(apikey).strip())}"
+            # Preserve WhatsApp formatting syntax (* bold, _ italic)
+            encoded_text = urllib.parse.quote(message, safe='*_()')
+            encoded_phone = urllib.parse.quote(clean, safe='+')
+            clean_apikey = str(apikey).strip()
+            url = f"https://api.callmebot.com/whatsapp.php?phone={encoded_phone}&text={encoded_text}&apikey={urllib.parse.quote(clean_apikey)}"
+            
+            print(f"[CallMeBot DEBUG] Sending HTTP GET request to CallMeBot for phone '{clean}'...")
             req = urllib.request.Request(url, headers={'User-Agent': 'DiyaScarves/1.0'})
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=8) as resp:
                 body = resp.read().decode('utf-8', errors='ignore')
+                print(f"[CallMeBot DEBUG] HTTP Response Status: {resp.status}, Body: {body.strip()}")
+                
+                # Check for CallMeBot error messages returned inside HTTP 200 responses
+                body_lower = body.lower()
+                if "error:" in body_lower or "invalid" in body_lower or "not allowed" in body_lower or "cannot be empty" in body_lower:
+                    clean_err = re.sub(r'<[^>]+>', '', body).strip()
+                    print(f"[CallMeBot ERROR] CallMeBot returned error body: {clean_err}")
+                    return False, clean_err
+                
                 return True, body
         except Exception as e:
+            print(f"[CallMeBot ERROR] Exception during HTTP dispatch: {e}")
             return False, str(e)
 
     if sync:

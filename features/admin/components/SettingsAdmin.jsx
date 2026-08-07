@@ -351,7 +351,7 @@ export default function SettingsAdmin() {
                 <div className="text-xs text-outline space-y-1">
                   <p className="font-medium text-on-background">1-Minute Free Setup:</p>
                   <ol className="list-decimal list-inside text-[11px] space-y-0.5">
-                    <li>Add <span className="font-mono text-emerald-500">+34 644 20 22 55</span> to your WhatsApp contacts.</li>
+                    <li>Add <span className="font-mono text-emerald-500">+34 623 78 95 95</span> to your WhatsApp contacts.</li>
                     <li>Send message: <span className="italic font-mono">I allow callmebot to send me messages</span></li>
                     <li>Enter the API key received from the bot above.</li>
                   </ol>
