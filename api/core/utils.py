@@ -212,15 +212,13 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
         print(f"[CallMeBot DEBUG] {msg}")
         return (False, msg, debug_info) if return_debug else (False, msg)
 
-    # Clean and format phone number
+    # Clean and format phone number for CallMeBot API (pure digits with country code, NO leading '+' sign)
     raw = str(phone).strip()
-    clean = re.sub(r'[^\d+]', '', raw)
+    clean = re.sub(r'[^\d]', '', raw)
     if clean.startswith('01') and len(clean) == 11:
-        clean = '+20' + clean[1:]
-    elif clean.startswith('20') and len(clean) == 12:
-        clean = '+' + clean
-    elif not clean.startswith('+') and len(clean) >= 10:
-        clean = '+' + clean
+        clean = '20' + clean[1:]
+    elif clean.startswith('0020') and len(clean) == 14:
+        clean = clean[2:]
 
     debug_info['formatted_phone'] = clean
 
@@ -228,10 +226,9 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
         try:
             # Preserve WhatsApp formatting syntax (* bold, _ italic)
             encoded_text = urllib.parse.quote(message, safe='*_()')
-            encoded_phone = urllib.parse.quote(clean, safe='+')
             clean_apikey = str(apikey).strip()
-            url = f"https://api.callmebot.com/whatsapp.php?phone={encoded_phone}&text={encoded_text}&apikey={urllib.parse.quote(clean_apikey)}"
-            debug_info['url_called'] = f"https://api.callmebot.com/whatsapp.php?phone={encoded_phone}&text=...&apikey=***"
+            url = f"https://api.callmebot.com/whatsapp.php?phone={clean}&text={encoded_text}&apikey={urllib.parse.quote(clean_apikey)}"
+            debug_info['url_called'] = f"https://api.callmebot.com/whatsapp.php?phone={clean}&text=...&apikey=***"
             
             print(f"[CallMeBot DEBUG] Sending HTTP GET request to CallMeBot for phone '{clean}'...")
             req = urllib.request.Request(url, headers={'User-Agent': 'DiyaScarves/1.0'})
