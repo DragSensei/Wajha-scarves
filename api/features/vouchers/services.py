@@ -41,16 +41,22 @@ def purchase_voucher(data, buyer_user=None):
     db.session.add(card)
     db.session.commit()
 
-    # ponytail: Dispatch CallMeBot WhatsApp alert to site owner on voucher purchase
+    # ponytail: Dispatch CallMeBot WhatsApp alert to site owner on voucher purchase with full details
     try:
         from api.core.utils import send_callmebot_whatsapp
+        buyer_label = f"User #{buyer_id} ({buyer_email})" if buyer_id else buyer_email
+        expiry_str = expires_at.strftime('%Y-%m-%d') if expires_at else 'N/A'
         voucher_msg = (
             f"🎁 *NEW GIFT CARD PURCHASED!*\n"
-            f"Voucher Code: {card.code}\n"
-            f"Amount: {card.value:.2f} EGP\n"
-            f"Buyer: {buyer_email}\n"
-            f"Recipient: {recipient_name or 'Self'}\n"
-            f"Message: {gift_message[:100] if gift_message else 'None'}"
+            f"━━━━━━━━━━━━━━━━━━━\n"
+            f"🎟️ *Voucher Code:* `{card.code}`\n"
+            f"💵 *Amount:* {card.value:.2f} EGP\n"
+            f"👤 *Buyer:* {buyer_label}\n"
+            f"👤 *Recipient Name:* {recipient_name or 'Self'}\n"
+            f"✉️ *Recipient Email:* {recipient_email or 'N/A'}\n"
+            f"⏳ *Expires:* {expiry_str}\n"
+            f"💬 *Gift Message:* {gift_message if gift_message else 'None'}\n"
+            f"━━━━━━━━━━━━━━━━━━━"
         )
         send_callmebot_whatsapp(voucher_msg)
     except Exception:
