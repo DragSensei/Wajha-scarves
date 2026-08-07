@@ -163,11 +163,12 @@ def serialize_product(product):
     return res
 
 
-def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_override: str = None, sync: bool = False):
+def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_override: str = None, sync: bool = True):
     """
     # ponytail: CallMeBot WhatsApp notification helper.
     Dispatches free WhatsApp messages to the site owner via CallMeBot API.
     Handles Egyptian and international phone numbers cleanly.
+    Defaults to sync=True to ensure reliable delivery in serverless environments (Vercel).
     """
     import urllib.request
     import urllib.parse
@@ -201,7 +202,7 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
             encoded_text = urllib.parse.quote(message)
             url = f"https://api.callmebot.com/whatsapp.php?phone={urllib.parse.quote(clean)}&text={encoded_text}&apikey={urllib.parse.quote(str(apikey).strip())}"
             req = urllib.request.Request(url, headers={'User-Agent': 'DiyaScarves/1.0'})
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 body = resp.read().decode('utf-8', errors='ignore')
                 return True, body
         except Exception as e:
@@ -210,7 +211,7 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
     if sync:
         return _execute()
     
-    # ponytail: dispatch asynchronously so order flow is never delayed by external API
+    # ponytail: dispatch asynchronously if explicitly requested
     thread = threading.Thread(target=_execute, daemon=True)
     thread.start()
     return True, "Dispatched"
