@@ -205,7 +205,9 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
         except Exception as e:
             return False, str(e)
 
-    if sync:
+    import os
+    is_serverless = os.environ.get('VERCEL') == '1' or os.environ.get('VERCEL_ENV') is not None
+    if sync or is_serverless:
         return _execute()
     
     # ponytail: dispatch asynchronously so order flow is never delayed by external API
