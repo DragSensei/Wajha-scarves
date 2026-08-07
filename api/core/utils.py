@@ -172,27 +172,29 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
     import urllib.request
     import urllib.parse
     import threading
+    import re
+
+    # Fetch configuration on parent thread where Flask context is present
+    from api.core.models import Setting
+    enabled = Setting.get_setting('callmebot_enabled', 'false')
+    phone = phone_override or Setting.get_setting('callmebot_phone') or Setting.get_setting('owner_whatsapp')
+    apikey = apikey_override or Setting.get_setting('callmebot_apikey')
+
+    if not phone_override and str(enabled).lower() not in ('true', '1', 'yes'):
+        return False, "CallMeBot notifications are disabled."
+
+    if not phone or not apikey:
+        return False, "Missing phone number or CallMeBot API key."
+
+    # Clean and format phone number
+    raw = str(phone).strip()
+    clean = re.sub(r'[^\d+]', '', raw)
+    if clean.startswith('01') and len(clean) == 11:
+        clean = '+20' + clean[1:]
+    elif clean.startswith('20') and len(clean) == 12:
+        clean = '+' + clean
 
     def _execute():
-        from api.core.models import Setting
-        enabled = Setting.get_setting('callmebot_enabled', 'false')
-        if not phone_override and str(enabled).lower() not in ('true', '1', 'yes'):
-            return False, "CallMeBot notifications are disabled."
-
-        phone = phone_override or Setting.get_setting('callmebot_phone') or Setting.get_setting('owner_whatsapp')
-        apikey = apikey_override or Setting.get_setting('callmebot_apikey')
-
-        if not phone or not apikey:
-            return False, "Missing phone number or CallMeBot API key."
-
-        # Clean and format phone number
-        raw = str(phone).strip()
-        clean = re.sub(r'[^\d+]', '', raw)
-        if clean.startswith('01') and len(clean) == 11:
-            clean = '+20' + clean[1:]
-        elif clean.startswith('20') and len(clean) == 12:
-            clean = '+' + clean
-
         try:
             encoded_text = urllib.parse.quote(message)
             url = f"https://api.callmebot.com/whatsapp.php?phone={urllib.parse.quote(clean)}&text={encoded_text}&apikey={urllib.parse.quote(str(apikey).strip())}"
