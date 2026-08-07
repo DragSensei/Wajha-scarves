@@ -330,19 +330,33 @@ def update_settings():
 def test_callmebot_notification():
     """
     # ponytail: Send a test WhatsApp message to verify CallMeBot credentials.
+    Auto-enables callmebot settings when the test succeeds.
     """
     data = request.get_json() or {}
     phone = data.get('phone')
     apikey = data.get('apikey')
     
     from api.core.utils import send_callmebot_whatsapp
+    from api.core.models import Setting
+    from api.core.db import db
+    
     test_msg = "🧪 *Diya Scarves CallMeBot Test*\nYour WhatsApp notification integration is working perfectly!"
     success, res = send_callmebot_whatsapp(test_msg, phone_override=phone, apikey_override=apikey, sync=True)
     
     if success:
+        try:
+            Setting.set_setting('callmebot_enabled', 'true')
+            if phone:
+                Setting.set_setting('callmebot_phone', phone)
+            if apikey:
+                Setting.set_setting('callmebot_apikey', apikey)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         return jsonify({'success': True, 'message': 'Test notification sent successfully!', 'response': res})
     else:
         return jsonify({'success': False, 'error': res or 'Failed to send test notification'}), 400
+
 
 
 # ----------------- TIERS ADMIN ROUTES -----------------

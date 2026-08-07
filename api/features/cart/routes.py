@@ -170,31 +170,38 @@ def api_create_order():
 
         db.session.commit()
 
-        # ponytail: Dispatch CallMeBot WhatsApp alert to site owner with complete order details
+        # ponytail: Dispatch CallMeBot WhatsApp alert to site owner with concise order details
         try:
             from api.core.utils import send_callmebot_whatsapp
+            from flask import current_app
             
-            # Format items list concisely for WhatsApp CallMeBot URL limits
             item_lines = [
-                f"• {qty}x {product.name} ({price * qty:.0f} EGP)"
+                f"• {product.name} x{qty} ({price * qty:.2f} EGP)"
                 for product, qty, price in processed_items
             ]
             items_formatted = "\n".join(item_lines) if item_lines else f"• {db_items_summary}"
 
-            discount_str = f" (Discount: -{discount_amount:.0f} EGP)" if discount_amount > 0 else ""
-            addr_str = f"{shipping_address or ''}, {city or ''}".strip(', ')
+            discount_str = f"\n🎟️ *Discount:* -{discount_amount:.2f} EGP" if discount_amount > 0 else ""
+            addr_parts = [shipping_address, city, postal_code]
+            addr_str = ", ".join([p for p in addr_parts if p])
 
             order_msg = (
-                f"🛍️ *NEW ORDER #{new_order.id}*\n"
-                f"👤 *Customer:* {customer_name} ({phone or 'N/A'})\n"
+                f"🛍️ *NEW ORDER RECEIVED!*\n"
+                f"📋 *Order ID:* #{new_order.id}\n"
+                f"👤 *Customer:* {customer_name}\n"
+                f"📞 *Phone:* {phone or 'N/A'}\n"
                 f"✉️ *Email:* {customer_email or 'N/A'}\n"
                 f"📍 *Address:* {addr_str or 'N/A'}\n"
-                f"📦 *Items:*\n{items_formatted}\n"
-                f"💰 *Total:* *{round(total_amount, 2):.2f} EGP*{discount_str}"
-            )
-            send_callmebot_whatsapp(order_msg)
-        except Exception:
-            pass
+                f"📦 *Items ({len(processed_items)}):*\n{items_formatted}\n"
+                f"{discount_str}\n"
+                f"💰 *TOTAL:* *{round(total_amount, 2):.2f} EGP*"
+            ).strip()
+            
+            success, msg = send_callmebot_whatsapp(order_msg)
+            current_app.logger.info(f"CallMeBot order notification result for Order #{new_order.id}: success={success}, msg={msg}")
+        except Exception as err:
+            from flask import current_app
+            current_app.logger.error(f"Failed to dispatch CallMeBot order notification for Order #{new_order.id}: {err}")
 
         # Instantly reconcile loyalty points & referral rewards
         try:

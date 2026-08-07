@@ -176,12 +176,14 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
 
     # Fetch configuration on parent thread where Flask context is present
     from api.core.models import Setting
-    enabled = Setting.get_setting('callmebot_enabled', 'false')
-    phone = phone_override or Setting.get_setting('callmebot_phone') or Setting.get_setting('owner_whatsapp')
+    enabled_setting = Setting.get_setting('callmebot_enabled')
+    phone = phone_override or Setting.get_setting('callmebot_phone') or Setting.get_setting('owner_whatsapp') or Setting.get_setting('whatsapp_number') or Setting.get_setting('contact_number')
     apikey = apikey_override or Setting.get_setting('callmebot_apikey')
 
-    if not phone_override and str(enabled).lower() not in ('true', '1', 'yes'):
-        return False, "CallMeBot notifications are disabled."
+    # Default to enabled if phone and apikey exist unless explicitly disabled ('false', '0', 'no')
+    if enabled_setting is not None and str(enabled_setting).lower() in ('false', '0', 'no', 'off'):
+        if not phone_override:
+            return False, "CallMeBot notifications are disabled."
 
     if not phone or not apikey:
         return False, "Missing phone number or CallMeBot API key."
@@ -205,13 +207,12 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
         except Exception as e:
             return False, str(e)
 
-    import os
-    is_serverless = os.environ.get('VERCEL') == '1' or os.environ.get('VERCEL_ENV') is not None
-    if sync or is_serverless:
+    if sync:
         return _execute()
     
     # ponytail: dispatch asynchronously so order flow is never delayed by external API
     thread = threading.Thread(target=_execute, daemon=True)
     thread.start()
     return True, "Dispatched"
+
 
