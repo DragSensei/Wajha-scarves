@@ -197,10 +197,12 @@ def api_create_order():
                 f"💰 *TOTAL:* *{round(total_amount, 2):.2f} EGP*"
             ).strip()
             
-            success, msg = send_callmebot_whatsapp(order_msg)
+            success, msg, debug_info = send_callmebot_whatsapp(order_msg, return_debug=True)
+            callmebot_debug = {'success': success, 'message': msg, **debug_info}
             current_app.logger.info(f"CallMeBot order notification result for Order #{new_order.id}: success={success}, msg={msg}")
         except Exception as err:
             from flask import current_app
+            callmebot_debug = {'success': False, 'error': str(err)}
             current_app.logger.error(f"Failed to dispatch CallMeBot order notification for Order #{new_order.id}: {err}")
 
         # Instantly reconcile loyalty points & referral rewards
@@ -210,7 +212,11 @@ def api_create_order():
         except Exception:
             pass
 
-        return jsonify({'success': True, 'order_id': new_order.id}), 201
+        return jsonify({
+            'success': True, 
+            'order_id': new_order.id, 
+            'callmebot_debug': callmebot_debug
+        }), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

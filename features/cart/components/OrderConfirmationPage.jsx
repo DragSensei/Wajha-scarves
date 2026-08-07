@@ -9,6 +9,8 @@ export default function OrderConfirmationPage() {
     return queryParams.get('order_id') || Math.floor(Math.random() * 9000) + 1000;
   });
 
+  const callmebotDebug = location.state?.callmebot_debug || window.__LAST_CALLMEBOT_DEBUG__;
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-24 text-center mt-12">
       <div className="flex justify-center mb-6">
@@ -22,6 +24,36 @@ export default function OrderConfirmationPage() {
       <p className="text-sm font-sans text-outline max-w-md mx-auto mb-8 leading-relaxed">
         Your order <strong className="text-on-background font-bold font-mono">#{orderId}</strong> has been successfully placed. We have sent a confirmation email with details and tracking information.
       </p>
+
+      {/* CallMeBot Client Debug Banner */}
+      {callmebotDebug && (
+        <div className="bg-amber-950/20 border border-amber-500/40 p-4 rounded-lg max-w-md mx-auto mb-8 text-left text-xs font-mono space-y-1.5">
+          <div className="flex items-center justify-between font-bold border-b border-amber-500/30 pb-1.5 text-amber-400">
+            <span>📲 CallMeBot WhatsApp Debug Output</span>
+            <span className={callmebotDebug.success ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+              {callmebotDebug.success ? "✓ SENT" : "✗ FAILED"}
+            </span>
+          </div>
+          <p className="text-amber-200">
+            <span className="text-amber-400 font-semibold">Message/Error:</span> {callmebotDebug.message || callmebotDebug.error || 'N/A'}
+          </p>
+          {callmebotDebug.formatted_phone && (
+            <p className="text-amber-200">
+              <span className="text-amber-400 font-semibold">Target Phone:</span> {callmebotDebug.formatted_phone}
+            </p>
+          )}
+          {callmebotDebug.url_called && (
+            <p className="text-amber-200 truncate">
+              <span className="text-amber-400 font-semibold">API Endpoint:</span> {callmebotDebug.url_called}
+            </p>
+          )}
+          {callmebotDebug.response_body && (
+            <p className="text-amber-200 bg-black/40 p-2 rounded text-[11px] break-words">
+              <span className="text-amber-400 font-semibold">CallMeBot Server Reply:</span> {callmebotDebug.response_body}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="bg-surface-container/30 border border-surface-container/60 p-6 rounded-xs max-w-sm mx-auto mb-10 text-left space-y-3">
         <h3 className="text-xs font-sans tracking-widest uppercase font-bold text-primary border-b border-surface-container/60 pb-2">

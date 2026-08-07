@@ -116,7 +116,15 @@ export default function CheckoutPage({ cartItems, onClearCart, user }) {
       const res = await api.createOrder(orderData);
       if (res.success) {
         onClearCart();
-        navigate(`/order-confirmation?order_id=${res.order_id}`);
+        if (res.callmebot_debug) {
+          console.log('%c[CallMeBot Debug Output]:', 'background: #059669; color: white; font-weight: bold; padding: 2px 6px;', res.callmebot_debug);
+          try {
+            window.__LAST_CALLMEBOT_DEBUG__ = res.callmebot_debug;
+          } catch (err) {
+            console.debug(err);
+          }
+        }
+        navigate(`/order-confirmation?order_id=${res.order_id}`, { state: { callmebot_debug: res.callmebot_debug } });
       }
     } catch (error) {
       alert("Failed to submit checkout: " + error.message);

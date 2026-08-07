@@ -163,7 +163,7 @@ def serialize_product(product):
     return res
 
 
-def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_override: str = None, sync: bool = True):
+def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_override: str = None, sync: bool = True, return_debug: bool = False):
     """
     # ponytail: CallMeBot WhatsApp notification helper.
     Dispatches free WhatsApp messages to the site owner via CallMeBot API.
@@ -173,23 +173,44 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
     import urllib.request
     import urllib.parse
     import threading
+    import os
     import re
 
     # Fetch configuration on parent thread where Flask context is present
     from api.core.models import Setting
     enabled_setting = Setting.get_setting('callmebot_enabled')
-    phone = phone_override or Setting.get_setting('callmebot_phone') or Setting.get_setting('owner_whatsapp') or Setting.get_setting('whatsapp_number') or Setting.get_setting('contact_number')
-    apikey = apikey_override or Setting.get_setting('callmebot_apikey')
+    phone = (
+        phone_override or 
+        os.environ.get('CALLMEBOT_PHONE') or 
+        os.environ.get('OWNER_WHATSAPP') or 
+        Setting.get_setting('callmebot_phone') or 
+        Setting.get_setting('owner_whatsapp') or 
+        Setting.get_setting('whatsapp_number') or 
+        Setting.get_setting('contact_number')
+    )
+    apikey = (
+        apikey_override or 
+        os.environ.get('CALLMEBOT_APIKEY') or 
+        Setting.get_setting('callmebot_apikey')
+    )
+
+    debug_info = {
+        'phone_configured': phone or None,
+        'apikey_present': bool(apikey),
+        'enabled_setting': enabled_setting
+    }
 
     # Default to enabled if phone and apikey exist unless explicitly disabled ('false', '0', 'no')
     if enabled_setting is not None and str(enabled_setting).lower() in ('false', '0', 'no', 'off'):
         if not phone_override:
             print("[CallMeBot DEBUG] CallMeBot notifications are explicitly disabled in settings.")
-            return False, "CallMeBot notifications are disabled."
+            msg = "CallMeBot notifications are disabled in settings."
+            return (False, msg, debug_info) if return_debug else (False, msg)
 
     if not phone or not apikey:
-        print(f"[CallMeBot DEBUG] Missing credentials — phone: '{phone}', apikey: '{apikey}'")
-        return False, f"Missing phone number ({phone or 'missing'}) or CallMeBot API key ({'present' if apikey else 'missing'})."
+        msg = f"Missing phone number ({'set' if phone else 'missing'}) or CallMeBot API key ({'set' if apikey else 'missing'})."
+        print(f"[CallMeBot DEBUG] {msg}")
+        return (False, msg, debug_info) if return_debug else (False, msg)
 
     # Clean and format phone number
     raw = str(phone).strip()
@@ -201,6 +222,8 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
     elif not clean.startswith('+') and len(clean) >= 10:
         clean = '+' + clean
 
+    debug_info['formatted_phone'] = clean
+
     def _execute():
         try:
             # Preserve WhatsApp formatting syntax (* bold, _ italic)
@@ -208,24 +231,29 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
             encoded_phone = urllib.parse.quote(clean, safe='+')
             clean_apikey = str(apikey).strip()
             url = f"https://api.callmebot.com/whatsapp.php?phone={encoded_phone}&text={encoded_text}&apikey={urllib.parse.quote(clean_apikey)}"
+            debug_info['url_called'] = f"https://api.callmebot.com/whatsapp.php?phone={encoded_phone}&text=...&apikey=***"
             
             print(f"[CallMeBot DEBUG] Sending HTTP GET request to CallMeBot for phone '{clean}'...")
             req = urllib.request.Request(url, headers={'User-Agent': 'DiyaScarves/1.0'})
             with urllib.request.urlopen(req, timeout=8) as resp:
                 body = resp.read().decode('utf-8', errors='ignore')
                 print(f"[CallMeBot DEBUG] HTTP Response Status: {resp.status}, Body: {body.strip()}")
+                debug_info['http_status'] = resp.status
+                debug_info['response_body'] = body.strip()
                 
                 # Check for CallMeBot error messages returned inside HTTP 200 responses
                 body_lower = body.lower()
                 if "error:" in body_lower or "invalid" in body_lower or "not allowed" in body_lower or "cannot be empty" in body_lower:
                     clean_err = re.sub(r'<[^>]+>', '', body).strip()
                     print(f"[CallMeBot ERROR] CallMeBot returned error body: {clean_err}")
-                    return False, clean_err
+                    return (False, clean_err, debug_info) if return_debug else (False, clean_err)
                 
-                return True, body
+                return (True, body, debug_info) if return_debug else (True, body)
         except Exception as e:
-            print(f"[CallMeBot ERROR] Exception during HTTP dispatch: {e}")
-            return False, str(e)
+            err_msg = str(e)
+            print(f"[CallMeBot ERROR] Exception during HTTP dispatch: {err_msg}")
+            debug_info['error'] = err_msg
+            return (False, err_msg, debug_info) if return_debug else (False, err_msg)
 
     if sync:
         return _execute()
@@ -233,6 +261,7 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
     # ponytail: dispatch asynchronously if explicitly requested
     thread = threading.Thread(target=_execute, daemon=True)
     thread.start()
-    return True, "Dispatched"
+    msg = "Dispatched asynchronously"
+    return (True, msg, debug_info) if return_debug else (True, msg)
 
 
