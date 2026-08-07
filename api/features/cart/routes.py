@@ -174,47 +174,23 @@ def api_create_order():
         try:
             from api.core.utils import send_callmebot_whatsapp
             
-            # Format items list with product name, quantity, price, line total, and remaining stock
-            item_details = []
-            for product, qty, price in processed_items:
-                line_total = price * qty
-                item_details.append(
-                    f"• *{product.name}*\n"
-                    f"   {qty}x @ {price:.2f} EGP = {line_total:.2f} EGP (Stock Left: {product.stock})"
-                )
-            items_formatted = "\n".join(item_details) if item_details else f"• {db_items_summary}"
+            # Format items list concisely for WhatsApp CallMeBot URL limits
+            item_lines = [
+                f"• {qty}x {product.name} ({price * qty:.0f} EGP)"
+                for product, qty, price in processed_items
+            ]
+            items_formatted = "\n".join(item_lines) if item_lines else f"• {db_items_summary}"
 
-            account_label = f"Registered User (ID: #{user_id})" if user_id else "Guest Checkout"
-            
-            discount_line = ""
-            if discount_amount > 0:
-                code_info = f" ({applied_voucher_code})" if applied_voucher_code else ""
-                discount_line = f"• *Discount{code_info}:* -{discount_amount:.2f} EGP\n"
+            discount_str = f" (Discount: -{discount_amount:.0f} EGP)" if discount_amount > 0 else ""
+            addr_str = f"{shipping_address or ''}, {city or ''}".strip(', ')
 
             order_msg = (
-                f"🛍️ *NEW ORDER RECEIVED!*\n"
-                f"━━━━━━━━━━━━━━━━━━━\n"
-                f"📋 *Order ID:* #{new_order.id}\n"
-                f"👤 *Account:* {account_label}\n"
-                f"\n"
-                f"👤 *CUSTOMER DETAILS*\n"
-                f"• *Name:* {customer_name}\n"
-                f"• *Phone:* {phone or 'N/A'}\n"
-                f"• *Email:* {customer_email or 'N/A'}\n"
-                f"\n"
-                f"📍 *SHIPPING DETAILS*\n"
-                f"• *Address:* {shipping_address or 'N/A'}\n"
-                f"• *City:* {city or 'N/A'}\n"
-                f"• *Postal Code:* {postal_code or 'N/A'}\n"
-                f"\n"
-                f"📦 *ORDERED ITEMS ({len(processed_items)})*\n"
-                f"{items_formatted}\n"
-                f"\n"
-                f"💰 *FINANCIAL SUMMARY*\n"
-                f"• *Subtotal:* {subtotal_amount:.2f} EGP\n"
-                f"{discount_line}"
-                f"• *TOTAL PAYABLE:* *{round(total_amount, 2):.2f} EGP*\n"
-                f"━━━━━━━━━━━━━━━━━━━"
+                f"🛍️ *NEW ORDER #{new_order.id}*\n"
+                f"👤 *Customer:* {customer_name} ({phone or 'N/A'})\n"
+                f"✉️ *Email:* {customer_email or 'N/A'}\n"
+                f"📍 *Address:* {addr_str or 'N/A'}\n"
+                f"📦 *Items:*\n{items_formatted}\n"
+                f"💰 *Total:* *{round(total_amount, 2):.2f} EGP*{discount_str}"
             )
             send_callmebot_whatsapp(order_msg)
         except Exception:
