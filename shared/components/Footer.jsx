@@ -1,6 +1,33 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '@/shared/lib/api';
+import { notify } from '@/shared/utils/notifications';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      notify.error('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.subscribeNewsletter(email);
+      notify.success(res?.message || 'Thank you for subscribing to Diya Silk Scarves!');
+      setSubscribed(true);
+      setEmail('');
+    } catch {
+      // error is already handled and notified by api.js request wrapper
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <footer className="bg-white border-t border-surface-container/60 mt-20 py-12 px-6 md:px-12">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
@@ -38,16 +65,30 @@ export default function Footer() {
         <div>
           <h4 className="text-xs font-sans tracking-widest text-on-background uppercase font-bold mb-4">Newsletter</h4>
           <p className="text-xs font-sans text-outline mb-4">Subscribe to receive notifications about new drops and exclusive private sales.</p>
-          <div className="flex border-b border-primary py-1">
-            <input 
-              type="email" 
-              placeholder="Your email address" 
-              className="w-full text-xs font-sans bg-transparent focus:outline-hidden text-on-background"
-            />
-            <button className="text-xs font-sans tracking-widest uppercase text-primary font-bold hover:text-primary-container transition-colors pl-2 cursor-pointer">
-              Subscribe
-            </button>
-          </div>
+          {subscribed ? (
+            <div className="bg-primary/10 border border-primary/30 p-3 text-xs font-sans text-primary rounded">
+              ✓ <strong>Subscribed!</strong> You're on the list for exclusive drop updates.
+            </div>
+          ) : (
+            <form onSubmit={handleSubscribe} className="flex border-b border-primary py-1">
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Your email address" 
+                disabled={loading}
+                required
+                className="w-full text-xs font-sans bg-transparent focus:outline-hidden text-on-background disabled:opacity-50"
+              />
+              <button 
+                type="submit"
+                disabled={loading}
+                className="text-xs font-sans tracking-widest uppercase text-primary font-bold hover:text-primary-container transition-colors pl-2 cursor-pointer disabled:opacity-50"
+              >
+                {loading ? '...' : 'Subscribe'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
 

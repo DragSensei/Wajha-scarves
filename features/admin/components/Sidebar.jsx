@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, FolderTree, Users, Settings, Globe, Crown, HeartHandshake, Gift } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, FolderTree, Users, Settings, Globe, Crown, HeartHandshake, Gift, Mail } from 'lucide-react';
 
 export default function Sidebar({ isCollapsed, onToggle }) {
   const location = useLocation();
@@ -18,6 +18,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
     {
       category: 'ENGAGEMENT',
       items: [
+        { name: 'Newsletter', path: '/admin/newsletter', icon: Mail },
         { name: 'Diya Rewards', path: '/rewards', icon: Crown },
         { name: 'Voucher Orders', path: '/admin/vouchers', icon: Gift },
         { name: 'Donations', path: '/admin/donations', icon: HeartHandshake },
@@ -32,6 +33,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
       ]
     }
   ];
+
 
   return (
     <aside className={`bg-white border-r border-surface-container/60 h-screen sticky top-0 shrink-0 flex flex-col justify-between transition-all duration-300 z-20 ${isCollapsed ? 'w-20' : 'w-64'}`}>

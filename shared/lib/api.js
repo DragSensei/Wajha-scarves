@@ -517,6 +517,45 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
+  },
+
+  // Newsletter
+  async subscribeNewsletter(email) {
+    return await request('/newsletter/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async unsubscribeNewsletter(email) {
+    return await request('/newsletter/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async getAdminSubscribers(page = 1, perPage = 12, search = '', activeOnly = false) {
+    const params = new URLSearchParams({
+      page,
+      per_page: perPage,
+      search,
+      active_only: activeOnly ? 'true' : 'false',
+    });
+    return await request(`/admin/newsletter?${params.toString()}`);
+  },
+
+  async sendNewsletterCampaign(campaignData) {
+    return await request('/admin/newsletter/send', {
+      method: 'POST',
+      body: JSON.stringify(campaignData),
+    });
+  },
+
+  async deleteSubscriber(id) {
+    return await request(`/admin/newsletter/${id}`, {
+      method: 'DELETE',
+    });
   }
 };
+
 

@@ -238,8 +238,12 @@ def send_callmebot_whatsapp(message: str, phone_override: str = None, apikey_ove
                 debug_info['http_status'] = resp.status
                 debug_info['response_body'] = body.strip()
                 
-                # Check for CallMeBot error messages returned inside HTTP 200 responses
+                # Check for CallMeBot rate limit queue notice vs errors
                 body_lower = body.lower()
+                if "added into the queue" in body_lower or "messages per 240 minutes" in body_lower or "message queued" in body_lower:
+                    debug_info['is_queued'] = True
+                    debug_info['queue_notice'] = "CallMeBot rate limit reached (16 messages per 4 hours). CallMeBot queued the message for batch delivery."
+
                 if "error:" in body_lower or "invalid" in body_lower or "not allowed" in body_lower or "cannot be empty" in body_lower:
                     clean_err = re.sub(r'<[^>]+>', '', body).strip()
                     print(f"[CallMeBot ERROR] CallMeBot returned error body: {clean_err}")

@@ -44,6 +44,7 @@ import TierFormAdmin from '@/features/admin/components/TierFormAdmin';
 import DonationsManager from '@/features/admin/components/DonationsManager';
 import GiftCardsManager from '@/features/admin/components/GiftCardsManager';
 import AdminVouchersManager from '@/features/vouchers/components/AdminVouchersManager';
+import NewsletterAdmin from '@/features/admin/components/NewsletterAdmin';
 
 
 function AppContent() {
@@ -279,6 +280,7 @@ function AppContent() {
                 <Route path="/admin/donations" element={<DonationsManager />} />
                 <Route path="/admin/gift-cards" element={<GiftCardsManager />} />
                 <Route path="/admin/vouchers" element={<AdminVouchersManager />} />
+                <Route path="/admin/newsletter" element={<NewsletterAdmin />} />
                 <Route path="/admin/orders" element={<OrdersAdmin />} />
                 <Route path="/admin/orders/:id" element={<OrderDetailAdmin />} />
                 <Route path="/admin/settings" element={<SettingsAdmin />} />

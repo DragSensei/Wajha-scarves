@@ -12,3 +12,11 @@
 - `image_filename` (VARCHAR(255), Nullable)
 - `stock` (INTEGER, Default 0, Not Null)
 - `created_at` (DATETIME, Default UTC Now)
+
+## Newsletter Subscribers Table (`newsletter_subscribers`)
+- `id` (INTEGER, Primary Key)
+- `email` (VARCHAR(255), Unique, Indexed, Not Null)
+- `is_subscribed` (BOOLEAN, Default True, Not Null)
+- `created_at` (DATETIME, Default UTC Now)
+- `updated_at` (DATETIME, Default UTC Now)
+

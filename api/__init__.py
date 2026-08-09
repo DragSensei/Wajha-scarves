@@ -103,6 +103,7 @@ def create_app(config_class=Config):
 
     from api.features.loyalty import loyalty_bp
     from api.features.vouchers import vouchers_bp
+    from api.features.newsletter import newsletter_bp, admin_newsletter_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(categories_bp, url_prefix='/api/categories')
@@ -111,6 +112,7 @@ def create_app(config_class=Config):
     app.register_blueprint(cart_db_bp, url_prefix='/api/cart') # handles cart persistence CRUD
     app.register_blueprint(loyalty_bp)
     app.register_blueprint(vouchers_bp)
+    app.register_blueprint(newsletter_bp, url_prefix='/api/newsletter')
     
     app.register_blueprint(admin_users_bp, url_prefix='/api/users')
     app.register_blueprint(admin_settings_bp, url_prefix='/api/settings')
@@ -120,6 +122,8 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_tiers_bp, url_prefix='/api/admin/tiers')
     app.register_blueprint(admin_donations_bp, url_prefix='/api/admin/donations')
     app.register_blueprint(admin_giftcards_bp, url_prefix='/api/admin/gift-cards')
+    app.register_blueprint(admin_newsletter_bp, url_prefix='/api/admin/newsletter')
+
 
 
     # No general CSRF exemptions to protect JWT HttpOnly cookie authentication.

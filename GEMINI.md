@@ -230,3 +230,19 @@ Image uploads implement a dual-layer compression strategy to optimize network ba
 - **Admin Configuration & Test Endpoint**:
   - Whitelisted settings: `callmebot_enabled`, `callmebot_phone`, `callmebot_apikey`.
   - `POST /api/admin/settings/test-callmebot` route in `api/features/admin/routes.py` allows admins to verify credentials and test live delivery directly from the Admin Settings panel (`SettingsAdmin.jsx`).
+
+---
+
+## 12. Newsletter Subscription & Admin Broadcast System
+
+### Customer Footer Subscription
+- **Component**: `shared/components/Footer.jsx` with input state, instant email validation, and toast feedback.
+- **Endpoint**: `POST /api/newsletter/subscribe` (rate-limited at 10 requests/min).
+- **Service**: `subscribe_email(email)` in `api/features/newsletter/services.py`. Prevents duplicates and handles re-subscription gracefully.
+
+### Admin Newsletter Dashboard & 12-Row Pagination
+- **Component**: `features/admin/components/NewsletterAdmin.jsx` (`/admin/newsletter`).
+- **12-Row Pagination**: Uses a strict 12-row pagination limit (`per_page = 12`) to minimize database query overhead.
+- **1-Click Broadcast Campaign**: Includes a 1-click broadcast email composer modal to send campaign emails to all active subscribers or custom-selected rows asynchronously in non-blocking background threads (`threading.Thread`).
+- **Admin API Surface**: `GET /api/admin/newsletter`, `POST /api/admin/newsletter/send`, `DELETE /api/admin/newsletter/<id>`.
+

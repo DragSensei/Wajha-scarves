@@ -30,21 +30,18 @@ export default function OrderConfirmationPage() {
         <div className="bg-amber-950/20 border border-amber-500/40 p-4 rounded-lg max-w-md mx-auto mb-8 text-left text-xs font-mono space-y-1.5">
           <div className="flex items-center justify-between font-bold border-b border-amber-500/30 pb-1.5 text-amber-400">
             <span>📲 CallMeBot WhatsApp Debug Output</span>
-            <span className={callmebotDebug.success ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
-              {callmebotDebug.success ? "✓ SENT" : "✗ FAILED"}
+            <span className={callmebotDebug.is_queued ? "text-amber-400 font-bold" : callmebotDebug.success ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+              {callmebotDebug.is_queued ? "⏳ QUEUED (RATE LIMITED)" : callmebotDebug.success ? "✓ SENT INSTANTLY" : "✗ FAILED"}
             </span>
           </div>
-          <p className="text-amber-200">
-            <span className="text-amber-400 font-semibold">Message/Error:</span> {callmebotDebug.message || callmebotDebug.error || 'N/A'}
-          </p>
+          {callmebotDebug.is_queued && (
+            <p className="text-amber-300 bg-amber-500/10 p-2 rounded border border-amber-500/20 text-[11px] leading-relaxed">
+              ⚠️ <strong>CallMeBot Free Tier Rate Limit Reached:</strong> CallMeBot limits free accounts to <strong>16 instant messages per 4 hours</strong>. Since multiple test orders were dispatched, CallMeBot has queued this message on their server to deliver shortly once the rate window resets.
+            </p>
+          )}
           {callmebotDebug.formatted_phone && (
             <p className="text-amber-200">
               <span className="text-amber-400 font-semibold">Target Phone:</span> {callmebotDebug.formatted_phone}
-            </p>
-          )}
-          {callmebotDebug.url_called && (
-            <p className="text-amber-200 truncate">
-              <span className="text-amber-400 font-semibold">API Endpoint:</span> {callmebotDebug.url_called}
             </p>
           )}
           {callmebotDebug.response_body && (
