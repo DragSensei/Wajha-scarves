@@ -11,24 +11,27 @@ export default function ProductsAdmin() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
-    api.getProducts().then((data) => {
-      if (isMounted) {
-        setProducts(data || []);
-        setLoading(false);
-      }
-    }).catch((err) => {
-      console.warn('Failed to load products:', err);
-      if (isMounted) setLoading(false);
-    });
+    api.getProductsPaginated({ page: currentPage, perPage: PAGE_SIZE })
+      .then((data) => {
+        if (isMounted) {
+          setProducts(data.products || []);
+          setTotalPages(data.pagination?.total_pages || 1);
+          setTotalItems(data.pagination?.total_items || 0);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load products:', err);
+        if (isMounted) setLoading(false);
+      });
     return () => { isMounted = false; };
-  }, []);
-
-  const totalPages = Math.ceil(products.length / PAGE_SIZE) || 1;
-  const paginatedProducts = products.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  }, [currentPage]);
 
   const imagesToDisplay = selectedProduct ? (
     selectedProduct.images && selectedProduct.images.length > 0 
@@ -46,7 +49,7 @@ export default function ProductsAdmin() {
             Product Catalog
           </h1>
           <p className="text-xs font-sans text-outline mt-1">
-            Manage scarves inventory, prices, stock levels, and store items. Click any row to view full details.
+            Manage scarves inventory, prices, stock levels, and store items ({totalItems} total products). Click any row to view full details.
           </p>
         </div>
         <Link 
@@ -96,14 +99,14 @@ export default function ProductsAdmin() {
               </tr>
             </thead>
             <tbody>
-              {paginatedProducts.length === 0 ? (
+              {products.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-outline font-sans">
                     No products found. Click "Add Product" to create one.
                   </td>
                 </tr>
               ) : (
-                paginatedProducts.map((p) => (
+                products.map((p) => (
                   <tr 
                     key={p.id} 
                     onClick={() => setSelectedProduct(p)}

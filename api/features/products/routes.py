@@ -68,6 +68,21 @@ def get_products():
     
     # Execute lean count query
     total = count_query.distinct().count()
+
+    is_all = request.args.get('all', '').lower() in ('true', '1')
+    if is_all:
+        all_products = query.all()
+        return jsonify({
+            'products': [serialize_product(p) for p in all_products],
+            'pagination': {
+                'page': 1,
+                'per_page': total,
+                'total_items': total,
+                'total_pages': 1,
+                'has_next': False,
+                'has_prev': False
+            }
+        })
     
     pagination = paginate_query(query, request, total=total)
     serialized_products = [serialize_product(p) for p in pagination.items]

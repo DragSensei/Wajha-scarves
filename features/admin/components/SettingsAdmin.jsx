@@ -53,7 +53,7 @@ export default function SettingsAdmin() {
     Promise.all([
       api.getSettings().catch(() => ({})),
       api.getCategories().catch(() => []),
-      api.getProducts().catch(() => []),
+      api.getProducts({ all: true }).catch(() => []),
       api.getTiers().catch(() => [])
     ]).then(([resSettings, resCategories, resProducts, resTiers]) => {
       if (resSettings && typeof resSettings === 'object') {

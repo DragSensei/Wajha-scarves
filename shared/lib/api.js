@@ -62,16 +62,63 @@ export const api = {
   },
 
   // Products
-  async getProducts(categorySlug = '', search = '') {
+  async getProducts(categorySlug = '', search = '', options = {}) {
     try {
       const params = new URLSearchParams();
-      if (categorySlug) params.append('category', categorySlug);
-      if (search) params.append('q', search);
+      if (typeof categorySlug === 'object' && categorySlug !== null) {
+        const opts = categorySlug;
+        if (opts.category) params.append('category', opts.category);
+        if (opts.search || opts.q) params.append('q', opts.search || opts.q);
+        if (opts.page) params.append('page', opts.page);
+        if (opts.perPage || opts.per_page) params.append('per_page', opts.perPage || opts.per_page);
+        if (opts.all) params.append('all', 'true');
+      } else {
+        if (categorySlug) params.append('category', categorySlug);
+        if (search) params.append('q', search);
+        if (options.page) params.append('page', options.page);
+        if (options.perPage || options.per_page) params.append('per_page', options.perPage || options.per_page);
+        if (options.all) params.append('all', 'true');
+      }
       const queryString = params.toString() ? `?${params.toString()}` : '';
       const data = await request(`/products${queryString}`);
-      return data.products;
+      return data.products || [];
     } catch {
       return [];
+    }
+  },
+
+  async getProductsPaginated({ category = '', search = '', page = 1, perPage = 12 } = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (category) params.append('category', category);
+      if (search) params.append('q', search);
+      if (page) params.append('page', page);
+      if (perPage) params.append('per_page', perPage);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const data = await request(`/products${queryString}`);
+      return {
+        products: data.products || [],
+        pagination: data.pagination || {
+          page: 1,
+          per_page: perPage,
+          total_items: data.products ? data.products.length : 0,
+          total_pages: 1,
+          has_next: false,
+          has_prev: false
+        }
+      };
+    } catch {
+      return {
+        products: [],
+        pagination: {
+          page: 1,
+          per_page: perPage,
+          total_items: 0,
+          total_pages: 1,
+          has_next: false,
+          has_prev: false
+        }
+      };
     }
   },
 

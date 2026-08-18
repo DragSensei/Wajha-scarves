@@ -14,15 +14,15 @@ export default function Overview() {
 
   useEffect(() => {
     Promise.all([
-      api.getProducts().catch(() => []),
+      api.getProductsPaginated({ perPage: 1 }).catch(() => ({ pagination: { total_items: 0 } })),
       api.getCategories().catch(() => []),
       api.getAdminOrders().catch(() => ({ orders: [] })),
       api.getSettings().catch(() => ({}))
-    ]).then(([products, categories, ordersRes, settingsRes]) => {
+    ]).then(([productsRes, categories, ordersRes, settingsRes]) => {
       const orders = ordersRes?.orders || [];
       const totalSales = orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
       setStats({
-        productsCount: products.length,
+        productsCount: productsRes?.pagination?.total_items ?? (productsRes?.products?.length || 0),
         categoriesCount: categories.length,
         salesTotal: totalSales,
         ordersCount: orders.length

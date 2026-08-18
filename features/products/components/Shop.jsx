@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { X, Heart } from 'lucide-react';
 import { api } from '@/shared/lib/api';
+import Pagination from '@/shared/components/Pagination';
 import { formatPrice } from '@/shared/utils/currency';
 import { getWishlist, toggleWishlistId, hasWishlistId } from '@/shared/utils/wishlist';
 
@@ -16,6 +17,8 @@ export default function Shop({ onAddToCart }) {
   const [categories, setCategories] = useState([]);
   const [categoryGroups, setCategoryGroups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [wishlist, setWishlist] = useState(getWishlist);
   const [animatingId, setAnimatingId] = useState(null);
@@ -39,21 +42,40 @@ export default function Shop({ onAddToCart }) {
   const currentCategoryKey = `${selectedCategory}:${searchQuery}`;
   if (currentCategoryKey !== prevCategoryKey) {
     setPrevCategoryKey(currentCategoryKey);
+    setCurrentPage(1);
     setLoading(true);
   }
 
   useEffect(() => {
+    let isMounted = true;
     Promise.all([
-      api.getProducts(selectedCategory, searchQuery),
+      api.getProductsPaginated({
+        category: selectedCategory,
+        search: searchQuery,
+        page: currentPage,
+        perPage: 12
+      }),
       api.getCategories(),
       api.getCategoryGroups()
     ]).then(([productsData, categoriesData, groupsData]) => {
-      setProducts(productsData);
-      setCategories(categoriesData || []);
-      setCategoryGroups(groupsData || []);
-      setLoading(false);
+      if (isMounted) {
+        setProducts(productsData.products || []);
+        setTotalPages(productsData.pagination?.total_pages || 1);
+        setCategories(categoriesData || []);
+        setCategoryGroups(groupsData || []);
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (isMounted) {
+        setProducts([]);
+        setLoading(false);
+      }
     });
-  }, [selectedCategory, searchQuery]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCategory, searchQuery, currentPage]);
 
   const activeGroup = categoryGroups.find(g => g.slug === selectedCategory);
   const activeCategory = categories.find(c => c.slug === selectedCategory);
@@ -134,119 +156,148 @@ export default function Shop({ onAddToCart }) {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-8 gap-y-12">
-          {products.map((product) => {
-            const altImage = product.images?.find(img => img.url !== product.primary_image_url)?.url;
-            const hoverImage = altImage || product.primary_image_url;
-            const isSameImage = !altImage;
-
-            return (
-              <div 
-                key={product.id} 
-                className="card__container flex flex-col group relative"
-              >
-                {/* Image Container Box (no outer card borders or padding) */}
-                <div className="card__picture-container relative w-full aspect-[3/4] overflow-hidden bg-surface-container-low mb-4">
-                  <Link to={`/product/${product.id}`} className="card card--center block w-full h-full">
-                    <img 
-                      src={product.primary_image_url || 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=600'} 
-                      alt={product.name}
-                      className="card__img w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    {hoverImage && (
-                      <img 
-                        src={hoverImage} 
-                        alt={`${product.name} alternate`}
-                        className={`card__img--hover ${isSameImage ? 'scale-x-[-1]' : ''}`}
-                      />
-                    )}
-                    
-                    {/* Sold Out / Discount Badges */}
-                    {product.stock <= 0 ? (
-                      <div className="card__badges absolute top-4 left-4 z-10">
-                        <div className="card__badges--item bg-surface-container text-outline text-[10px] font-sans tracking-widest uppercase px-3 py-1 font-bold" data-custom-badge="sold-out">
-                          Sold out
-                        </div>
-                      </div>
-                    ) : product.discount_active ? (
-                      <div className="card__badges absolute top-4 left-4 z-10">
-                        <div className="card__badges--item bg-primary text-white text-[10px] font-sans tracking-widest uppercase px-3 py-1 font-bold">
-                          Sale
-                        </div>
-                      </div>
-                    ) : null}
-                  </Link>
-
-                  {/* Sale Badge Overlay */}
-                  {product.discount_active && (
-                    <div className="absolute top-4 left-4 z-10 bg-rose-600 text-white text-[10px] font-sans font-bold tracking-wider px-2 py-0.5 rounded shadow-xs uppercase">
-                      {product.discount_percent ? `${product.discount_percent}% OFF` : 'SALE'}
-                    </div>
-                  )}
-
-                  {/* Wishlist Button Overlay */}
-                  <div className="xb-wishlist-button-collection absolute top-4 right-4 z-10">
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleWishlist(product.id);
-                      }}
-                      className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-xs text-outline hover:text-primary transition-colors cursor-pointer"
-                      aria-label={`Toggle wishlist for ${product.name}`}
-                    >
-                      <Heart 
-                        className={`w-[18px] h-[18px] transition-all duration-300 ${
-                          isWishlisted(product.id) ? 'fill-red-500 text-red-500' : 'text-outline hover:text-red-400'
-                        } ${animatingId === product.id ? 'animate-heart-pop' : ''}`} 
-                      />
-                    </button>
-                  </div>
-
-                  {/* Desktop Quick-Add Button overlay (slides up/fades in on hover) */}
-                  <div className="card__quick-add-container--desktop">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAddToCart(product);
-                      }}
-                      disabled={product.stock <= 0}
-                      className="w-full bg-white/90 backdrop-blur-xs text-on-surface font-sans text-[11px] font-bold tracking-widest py-3 uppercase border border-outline-variant hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {product.stock > 0 ? 'Add to bag' : 'Sold out'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Centered Name and Price underneath */}
-                <Link to={`/product/${product.id}`} className="text-center px-2 block mt-1 hover:no-underline">
-                  <h3 className="card__title font-serif text-sm font-semibold text-on-background group-hover:text-primary transition-colors duration-300 mb-2 leading-snug">
-                    {product.name}
-                  </h3>
-                  <div className="card__price text-xs font-sans tracking-wider">
-                    {product.discount_active ? (
-                      <div className="flex justify-center items-center space-x-2">
-                        <span className="line-through text-[11px] text-outline/70">
-                          {formatPrice(product.original_price)}
-                        </span>
-                        <span className="font-bold text-rose-600">
-                          {formatPrice(product.discounted_price)}
-                        </span>
-                        <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1 py-0.2 border border-rose-200 rounded">
-                          {product.discount_percent ? `${product.discount_percent}% OFF` : 'SALE'}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-outline">{formatPrice(product.original_price)}</span>
-                    )}
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
+      ) : products.length === 0 ? (
+        <div className="text-center py-16 bg-surface-container/30 border border-surface-container rounded p-8">
+          <p className="text-sm font-sans text-outline mb-4">
+            No products found matching your current filter.
+          </p>
+          {(selectedCategory || searchQuery) && (
+            <Link
+              to="/shop"
+              className="inline-block bg-primary text-white px-5 py-2.5 text-xs font-sans uppercase tracking-widest font-medium hover:bg-primary-container transition-colors"
+            >
+              View Full Collection
+            </Link>
+          )}
         </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-8 gap-y-12">
+            {products.map((product) => {
+              const altImage = product.images?.find(img => img.url !== product.primary_image_url)?.url;
+              const hoverImage = altImage || product.primary_image_url;
+              const isSameImage = !altImage;
+
+              return (
+                <div 
+                  key={product.id} 
+                  className="card__container flex flex-col group relative"
+                >
+                  {/* Image Container Box (no outer card borders or padding) */}
+                  <div className="card__picture-container relative w-full aspect-[3/4] overflow-hidden bg-surface-container-low mb-4">
+                    <Link to={`/product/${product.id}`} className="card card--center block w-full h-full">
+                      <img 
+                        src={product.primary_image_url || 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=600'} 
+                        alt={product.name}
+                        className="card__img w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      {hoverImage && (
+                        <img 
+                          src={hoverImage} 
+                          alt={`${product.name} alternate`}
+                          className={`card__img--hover ${isSameImage ? 'scale-x-[-1]' : ''}`}
+                        />
+                      )}
+                      
+                      {/* Sold Out / Discount Badges */}
+                      {product.stock <= 0 ? (
+                        <div className="card__badges absolute top-4 left-4 z-10">
+                          <div className="card__badges--item bg-surface-container text-outline text-[10px] font-sans tracking-widest uppercase px-3 py-1 font-bold" data-custom-badge="sold-out">
+                            Sold out
+                          </div>
+                        </div>
+                      ) : product.discount_active ? (
+                        <div className="card__badges absolute top-4 left-4 z-10">
+                          <div className="card__badges--item bg-primary text-white text-[10px] font-sans tracking-widest uppercase px-3 py-1 font-bold">
+                            Sale
+                          </div>
+                        </div>
+                      ) : null}
+                    </Link>
+
+                    {/* Sale Badge Overlay */}
+                    {product.discount_active && (
+                      <div className="absolute top-4 left-4 z-10 bg-rose-600 text-white text-[10px] font-sans font-bold tracking-wider px-2 py-0.5 rounded shadow-xs uppercase">
+                        {product.discount_percent ? `${product.discount_percent}% OFF` : 'SALE'}
+                      </div>
+                    )}
+
+                    {/* Wishlist Button Overlay */}
+                    <div className="xb-wishlist-button-collection absolute top-4 right-4 z-10">
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleWishlist(product.id);
+                        }}
+                        className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-xs text-outline hover:text-primary transition-colors cursor-pointer"
+                        aria-label={`Toggle wishlist for ${product.name}`}
+                      >
+                        <Heart 
+                          className={`w-[18px] h-[18px] transition-all duration-300 ${
+                            isWishlisted(product.id) ? 'fill-red-500 text-red-500' : 'text-outline hover:text-red-400'
+                          } ${animatingId === product.id ? 'animate-heart-pop' : ''}`} 
+                        />
+                      </button>
+                    </div>
+
+                    {/* Desktop Quick-Add Button overlay (slides up/fades in on hover) */}
+                    <div className="card__quick-add-container--desktop">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onAddToCart(product);
+                        }}
+                        disabled={product.stock <= 0}
+                        className="w-full bg-white/90 backdrop-blur-xs text-on-surface font-sans text-[11px] font-bold tracking-widest py-3 uppercase border border-outline-variant hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {product.stock > 0 ? 'Add to bag' : 'Sold out'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Centered Name and Price underneath */}
+                  <Link to={`/product/${product.id}`} className="text-center px-2 block mt-1 hover:no-underline">
+                    <h3 className="card__title font-serif text-sm font-semibold text-on-background group-hover:text-primary transition-colors duration-300 mb-2 leading-snug">
+                      {product.name}
+                    </h3>
+                    <div className="card__price text-xs font-sans tracking-wider">
+                      {product.discount_active ? (
+                        <div className="flex justify-center items-center space-x-2">
+                          <span className="line-through text-[11px] text-outline/70">
+                            {formatPrice(product.original_price)}
+                          </span>
+                          <span className="font-bold text-rose-600">
+                            {formatPrice(product.discounted_price)}
+                          </span>
+                          <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1 py-0.2 border border-rose-200 rounded">
+                            {product.discount_percent ? `${product.discount_percent}% OFF` : 'SALE'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-outline">{formatPrice(product.original_price)}</span>
+                      )}
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="mt-16">
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(newPage) => {
+                  setCurrentPage(newPage);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

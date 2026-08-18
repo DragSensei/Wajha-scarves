@@ -22,7 +22,7 @@ export default function WishlistPage({ onAddToCart }) {
 
   useEffect(() => {
     let isMounted = true;
-    api.getProducts().then((allProducts) => {
+    api.getProducts({ all: true }).then((allProducts) => {
       if (isMounted) {
         setProducts(allProducts || []);
         setLoading(false);
